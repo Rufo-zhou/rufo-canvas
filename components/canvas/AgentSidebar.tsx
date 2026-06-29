@@ -414,7 +414,11 @@ export function AgentSidebar({
     }
 
     if (!selectedModel.available && appMode !== "demo") {
-      setError("该模型需要配置免费供应商 API Key，当前尚未启用。");
+      setError("该模型尚未接入 API Key，暂时不能提交生成。");
+      setErrorSolution(
+        `请点击“自助接入 API”填写 ${providerDisplayName(selectedModel.provider)} Key，或等待站点管理员配置服务器 Key。`
+      );
+      setSettingsOpen(true);
       return;
     }
 
@@ -736,6 +740,18 @@ export function AgentSidebar({
                 Pollinations 模型会消耗 Pollen；API Key 已接入不代表账户有可用余额。
               </p>
             ) : null}
+            {selectedModel && !selectedModel.available && appMode !== "demo" ? (
+              <div className="mt-2 flex items-center justify-between gap-2 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                <span>该模型需要接入 {providerDisplayName(selectedModel.provider)} Key 后才能生成。</span>
+                <button
+                  type="button"
+                  onClick={() => setSettingsOpen(true)}
+                  className="shrink-0 rounded bg-white px-2 py-1 font-semibold text-amber-800 shadow-sm hover:bg-amber-100"
+                >
+                  接入 API
+                </button>
+              </div>
+            ) : null}
           </label>
 
           <label className="block">
@@ -1036,7 +1052,7 @@ export function AgentSidebar({
           <button
             form="rufo-generation-form"
             type="submit"
-            disabled={submitting || (!selectedModel?.available && appMode !== "demo")}
+            disabled={submitting}
             className="inline-flex h-10 items-center gap-2 rounded-full bg-slate-950 px-5 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {submitting ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <SendHorizontal className="h-4 w-4" aria-hidden="true" />}
@@ -1559,6 +1575,15 @@ function getDurationOptions(
     model?.durationOptions ??
     defaultDurationOptions
   );
+}
+
+function providerDisplayName(provider: MediaGenerationProvider) {
+  if (provider === "pollinations") return "Pollinations";
+  if (provider === "huggingface") return "Hugging Face";
+  if (provider === "agnes") return "Agnes AI";
+  if (provider === "nano-banana") return "Nano Banana";
+  if (provider === "gptlmage2") return "GPTlmage2";
+  return "公共模型";
 }
 
 const defaultDurationOptions = [5];

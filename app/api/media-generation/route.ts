@@ -8,10 +8,6 @@ import {
   pollAsyncMediaGeneration,
   startAsyncMediaGeneration
 } from "@/lib/media-generation/service";
-import {
-  normalizeGeneratedImage,
-  prepareReferenceImage
-} from "@/lib/media-generation/image-normalization";
 import { getMediaModel, isMediaModelAvailable, mediaModels } from "@/lib/media-generation/catalog";
 import { resolveMediaDimensions } from "@/lib/media-generation/presets";
 import {
@@ -611,7 +607,7 @@ async function prepareAgnesReferenceImages(
       }
 
       const bytes = Buffer.from(await response.arrayBuffer());
-      const prepared = await prepareReferenceImage(bytes, {
+      const prepared = await prepareReferenceImageSafely(bytes, {
         width: input.width,
         height: input.height,
         fit: input.fit
@@ -656,16 +652,23 @@ async function uploadMedia(
     input.targetWidth &&
     input.targetHeight
   ) {
-    const normalized = await normalizeGeneratedImage(bytes, {
+    const normalized = await normalizeGeneratedImageSafely(bytes, {
       width: input.targetWidth,
       height: input.targetHeight
     });
-    bytes = normalized.bytes;
-    mimeType = normalized.mimeType;
-    dimensions = {
-      width: normalized.width,
-      height: normalized.height
-    };
+    if (normalized) {
+      bytes = normalized.bytes;
+      mimeType = normalized.mimeType;
+      dimensions = {
+        width: normalized.width,
+        height: normalized.height
+      };
+    } else {
+      dimensions = {
+        width: input.targetWidth,
+        height: input.targetHeight
+      };
+    }
   }
 
   const extension = extensionForMimeType(mimeType, input.mediaType);
@@ -687,6 +690,38 @@ async function uploadMedia(
     width: dimensions?.width,
     height: dimensions?.height
   };
+}
+
+async function normalizeGeneratedImageSafely(
+  bytes: Buffer,
+  target: { width: number; height: number }
+) {
+  try {
+    const { normalizeGeneratedImage } = await import(
+      "@/lib/media-generation/image-normalization"
+    );
+    return normalizeGeneratedImage(bytes, target);
+  } catch {
+    return null;
+  }
+}
+
+async function prepareReferenceImageSafely(
+  bytes: Buffer,
+  target: {
+    width: number;
+    height: number;
+    fit: MediaReferenceFit;
+  }
+) {
+  try {
+    const { prepareReferenceImage } = await import(
+      "@/lib/media-generation/image-normalization"
+    );
+    return prepareReferenceImage(bytes, target);
+  } catch {
+    return bytes;
+  }
 }
 
 async function remoteMediaToBlob(mediaUrl: string) {
