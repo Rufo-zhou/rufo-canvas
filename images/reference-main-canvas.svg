@@ -1,0 +1,44 @@
+<svg width="1440" height="900" viewBox="0 0 1440 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1440" height="900" fill="#F8FAFC"/>
+  <rect x="0" y="0" width="1440" height="56" fill="#FFFFFF"/>
+  <line x1="0" y1="55.5" x2="1440" y2="55.5" stroke="#CBD5E1"/>
+  <text x="24" y="35" fill="#0F172A" font-family="Arial, sans-serif" font-size="18" font-weight="700">Rufo</text>
+  <text x="1220" y="35" fill="#475569" font-family="Arial, sans-serif" font-size="14">Save</text>
+  <rect x="0" y="56" width="280" height="844" fill="#FFFFFF"/>
+  <line x1="279.5" y1="56" x2="279.5" y2="900" stroke="#CBD5E1"/>
+  <text x="24" y="96" fill="#0F172A" font-family="Arial, sans-serif" font-size="15" font-weight="700">Nodes</text>
+  <rect x="24" y="120" width="232" height="44" rx="6" fill="#F1F5F9" stroke="#CBD5E1"/>
+  <text x="44" y="148" fill="#334155" font-family="Arial, sans-serif" font-size="14">Prompt</text>
+  <rect x="24" y="176" width="232" height="44" rx="6" fill="#F1F5F9" stroke="#CBD5E1"/>
+  <text x="44" y="204" fill="#334155" font-family="Arial, sans-serif" font-size="14">Generation</text>
+  <rect x="24" y="232" width="232" height="44" rx="6" fill="#F1F5F9" stroke="#CBD5E1"/>
+  <text x="44" y="260" fill="#334155" font-family="Arial, sans-serif" font-size="14">Asset</text>
+  <rect x="280" y="56" width="840" height="844" fill="#EEF2F7"/>
+  <path d="M280 156H1120M280 256H1120M280 356H1120M280 456H1120M280 556H1120M280 656H1120M280 756H1120" stroke="#D8E0EA"/>
+  <path d="M380 56V900M480 56V900M580 56V900M680 56V900M780 56V900M880 56V900M980 56V900M1080 56V900" stroke="#D8E0EA"/>
+  <rect x="360" y="230" width="180" height="76" rx="8" fill="#FFFFFF" stroke="#94A3B8"/>
+  <text x="384" y="258" fill="#0F172A" font-family="Arial, sans-serif" font-size="14" font-weight="700">Prompt Node</text>
+  <text x="384" y="282" fill="#64748B" font-family="Arial, sans-serif" font-size="12">Prompt and parameters</text>
+  <rect x="640" y="230" width="180" height="76" rx="8" fill="#FFFFFF" stroke="#94A3B8"/>
+  <text x="664" y="258" fill="#0F172A" font-family="Arial, sans-serif" font-size="14" font-weight="700">Generate Node</text>
+  <text x="664" y="282" fill="#64748B" font-family="Arial, sans-serif" font-size="12">Provider and status</text>
+  <rect x="900" y="230" width="160" height="76" rx="8" fill="#FFFFFF" stroke="#94A3B8"/>
+  <text x="924" y="258" fill="#0F172A" font-family="Arial, sans-serif" font-size="14" font-weight="700">Asset Node</text>
+  <text x="924" y="282" fill="#64748B" font-family="Arial, sans-serif" font-size="12">Generated result</text>
+  <path d="M540 268H640" stroke="#475569" stroke-width="2"/>
+  <path d="M632 263L640 268L632 273" stroke="#475569" stroke-width="2"/>
+  <path d="M820 268H900" stroke="#475569" stroke-width="2"/>
+  <path d="M892 263L900 268L892 273" stroke="#475569" stroke-width="2"/>
+  <rect x="1120" y="56" width="320" height="844" fill="#FFFFFF"/>
+  <line x1="1119.5" y1="56" x2="1119.5" y2="900" stroke="#CBD5E1"/>
+  <text x="1144" y="96" fill="#0F172A" font-family="Arial, sans-serif" font-size="15" font-weight="700">Properties</text>
+  <text x="1144" y="132" fill="#475569" font-family="Arial, sans-serif" font-size="12">Provider</text>
+  <rect x="1144" y="144" width="248" height="40" rx="6" fill="#FFFFFF" stroke="#CBD5E1"/>
+  <text x="1160" y="169" fill="#0F172A" font-family="Arial, sans-serif" font-size="13">Nano Banana</text>
+  <text x="1144" y="216" fill="#475569" font-family="Arial, sans-serif" font-size="12">Prompt</text>
+  <rect x="1144" y="228" width="248" height="128" rx="6" fill="#FFFFFF" stroke="#CBD5E1"/>
+  <rect x="1144" y="384" width="116" height="40" rx="6" fill="#0F172A"/>
+  <text x="1173" y="409" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="13">Generate</text>
+  <rect x="1276" y="384" width="116" height="40" rx="6" fill="#FFFFFF" stroke="#CBD5E1"/>
+  <text x="1310" y="409" fill="#334155" font-family="Arial, sans-serif" font-size="13">Save</text>
+</svg>

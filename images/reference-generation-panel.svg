@@ -1,0 +1,27 @@
+<svg width="640" height="900" viewBox="0 0 640 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="640" height="900" fill="#F8FAFC"/>
+  <rect x="120" y="56" width="400" height="788" rx="8" fill="#FFFFFF" stroke="#CBD5E1"/>
+  <text x="152" y="104" fill="#0F172A" font-family="Arial, sans-serif" font-size="18" font-weight="700">Generation Panel</text>
+  <text x="152" y="148" fill="#475569" font-family="Arial, sans-serif" font-size="12">Provider</text>
+  <rect x="152" y="160" width="336" height="44" rx="6" fill="#FFFFFF" stroke="#CBD5E1"/>
+  <text x="168" y="188" fill="#0F172A" font-family="Arial, sans-serif" font-size="14">Nano Banana</text>
+  <text x="152" y="244" fill="#475569" font-family="Arial, sans-serif" font-size="12">Prompt</text>
+  <rect x="152" y="256" width="336" height="152" rx="6" fill="#FFFFFF" stroke="#CBD5E1"/>
+  <text x="168" y="286" fill="#94A3B8" font-family="Arial, sans-serif" font-size="13">Describe the image to generate...</text>
+  <text x="152" y="448" fill="#475569" font-family="Arial, sans-serif" font-size="12">Negative Prompt</text>
+  <rect x="152" y="460" width="336" height="96" rx="6" fill="#FFFFFF" stroke="#CBD5E1"/>
+  <text x="168" y="490" fill="#94A3B8" font-family="Arial, sans-serif" font-size="13">low quality, blurry...</text>
+  <text x="152" y="596" fill="#475569" font-family="Arial, sans-serif" font-size="12">Size</text>
+  <rect x="152" y="608" width="156" height="44" rx="6" fill="#FFFFFF" stroke="#CBD5E1"/>
+  <text x="168" y="636" fill="#0F172A" font-family="Arial, sans-serif" font-size="14">1024</text>
+  <rect x="332" y="608" width="156" height="44" rx="6" fill="#FFFFFF" stroke="#CBD5E1"/>
+  <text x="348" y="636" fill="#0F172A" font-family="Arial, sans-serif" font-size="14">1024</text>
+  <text x="152" y="692" fill="#475569" font-family="Arial, sans-serif" font-size="12">Status</text>
+  <rect x="152" y="704" width="336" height="44" rx="6" fill="#F1F5F9" stroke="#CBD5E1"/>
+  <circle cx="174" cy="726" r="5" fill="#F59E0B"/>
+  <text x="192" y="731" fill="#334155" font-family="Arial, sans-serif" font-size="14">pending</text>
+  <rect x="152" y="780" width="160" height="44" rx="6" fill="#0F172A"/>
+  <text x="200" y="808" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="14">Generate</text>
+  <rect x="328" y="780" width="160" height="44" rx="6" fill="#FFFFFF" stroke="#CBD5E1"/>
+  <text x="390" y="808" fill="#334155" font-family="Arial, sans-serif" font-size="14">Save</text>
+</svg>
