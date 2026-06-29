@@ -526,62 +526,43 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
 
     setNodes((current) => {
       if (current.some((node) => node.id === assetNodeId)) {
-        return current.map((node) => ({
-          ...node,
-          selected: node.id === assetNodeId
-        }));
+        return current
+          .filter((node) => node.id !== sourceNodeId)
+          .map((node) => ({
+            ...node,
+            selected: node.id === assetNodeId
+          }));
       }
 
       const generationNode = sourceNodeId
         ? current.find((node) => node.id === sourceNodeId)
         : undefined;
-      const nextPosition = generationNode
-        ? {
-            x:
-              generationNode.position.x +
-              readNodeDimension(generationNode.style?.width, 320) +
-              80,
-            y: generationNode.position.y
-          }
-        : undefined;
+      const nextPosition = generationNode?.position;
       const nextNode = createMediaNode(media, current.length, nextPosition);
 
-      return [
-        ...current.map((node) =>
-          node.id === generationNode?.id
-            ? {
-                ...node,
-                data: {
-                  ...node.data,
-                  status: "completed" as const,
-                  progress: 100,
-                  statusLabel: "生成完成"
-                },
-                selected: false
-              }
+      if (generationNode) {
+        return current.map((node) =>
+          node.id === generationNode.id
+            ? { ...nextNode, selected: true }
             : { ...node, selected: false }
-        ),
+        );
+      }
+
+      return [
+        ...current.map((node) => ({ ...node, selected: false })),
         { ...nextNode, selected: true }
       ];
     });
 
     if (sourceNodeId) {
-      afterNextPaint(() => {
-        setEdges((current) => {
-          const next = addEdge(
-            {
-              id: `edge-${crypto.randomUUID()}`,
-              source: sourceNodeId,
-              target: assetNodeId,
-              type: "smoothstep",
-              animated: false,
-              style: { stroke: "#64748b", strokeWidth: 1.5 }
-            },
-            current
-          );
-          edgesRef.current = next;
-          return next;
-        });
+      setEdges((current) => {
+        const next = current.map((edge) => ({
+          ...edge,
+          source: edge.source === sourceNodeId ? assetNodeId : edge.source,
+          target: edge.target === sourceNodeId ? assetNodeId : edge.target
+        }));
+        edgesRef.current = next;
+        return next;
       });
     }
     setStatus(`${media.mediaType === "video" ? "视频" : "图片"}已添加到画布`);
@@ -1398,17 +1379,20 @@ function createGenerationNode(
   position: { x: number; y: number }
 ): CanvasNode {
   const ratio = readAspectRatioValue(request.aspectRatio) ?? 1;
-  const width = 320;
-  const previewHeight = Math.min(Math.max(width / ratio, 150), 260);
+  const naturalWidth = request.mediaType === "video" ? 1280 : 1024;
+  const naturalHeight = Math.max(Math.round(naturalWidth / ratio), 1);
+  const size = getCanvasMediaSize(
+    naturalWidth,
+    naturalHeight,
+    request.mediaType,
+    request.aspectRatio
+  );
 
   return {
     id: request.draftNodeId ?? `generation-${request.clientTaskId}`,
     type: "generationTask",
     position,
-    style: {
-      width,
-      height: previewHeight + 184
-    },
+    style: size,
     data: {
       kind: "generation",
       label: request.prompt,
@@ -1493,11 +1477,6 @@ function createMediaNode(
       status: "completed"
     }
   };
-}
-
-function readNodeDimension(value: unknown, fallback: number) {
-  const number = typeof value === "number" ? value : Number(value);
-  return Number.isFinite(number) && number > 0 ? number : fallback;
 }
 
 function readPointerClientPoint(event: MouseEvent | TouchEvent) {

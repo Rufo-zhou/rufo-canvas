@@ -21,6 +21,7 @@ import {
   Settings2,
   Trash2,
   Upload,
+  WandSparkles,
   X
 } from "lucide-react";
 import { ApiSettingsDialog } from "@/components/settings/ApiSettingsDialog";
@@ -179,6 +180,7 @@ export function AgentSidebar({
   const [generationProgress, setGenerationProgress] = useState<number | null>(
     null
   );
+  const [polishingPrompt, setPolishingPrompt] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [errorSolution, setErrorSolution] = useState<string | null>(null);
   const [historyRecords, setHistoryRecords] = useState<
@@ -616,6 +618,55 @@ export function AgentSidebar({
     }
   }
 
+  async function handlePolishPrompt() {
+    const trimmedPrompt = prompt.trim();
+
+    if (!trimmedPrompt) {
+      setError("请先输入需要润色的提示词。");
+      setErrorSolution(null);
+      promptRef.current?.focus();
+      return;
+    }
+
+    setPolishingPrompt(true);
+    setError(null);
+    setErrorSolution(null);
+
+    try {
+      const response = await fetch("/api/prompt-polish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: trimmedPrompt,
+          mediaType,
+          aspectRatio,
+          quality,
+          modelLabel: selectedModel?.label,
+          referenceMode
+        })
+      });
+      const payload = (await response.json()) as {
+        data?: { prompt?: string };
+        error?: { message?: string };
+      };
+
+      if (!response.ok || !payload.data?.prompt) {
+        throw new Error(payload.error?.message ?? "提示词润色失败。");
+      }
+
+      setPrompt(payload.data.prompt);
+    } catch (caughtError) {
+      const message =
+        caughtError instanceof Error
+          ? caughtError.message
+          : "提示词润色失败。";
+      setError(message);
+      setErrorSolution("请稍后重试，或先手动补充主体、场景、光线、风格和构图要求。");
+    } finally {
+      setPolishingPrompt(false);
+    }
+  }
+
   function changeMediaType(nextType: MediaType) {
     setMediaType(nextType);
     setReferenceMode("none");
@@ -755,7 +806,22 @@ export function AgentSidebar({
           </label>
 
           <label className="block">
-            <span className="mb-1 block text-xs font-medium text-slate-600">画面描述</span>
+            <span className="mb-1 flex items-center justify-between gap-2">
+              <span className="text-xs font-medium text-slate-600">画面描述</span>
+              <button
+                type="button"
+                onClick={handlePolishPrompt}
+                disabled={polishingPrompt}
+                className="inline-flex h-7 items-center gap-1 rounded-md border border-slate-200 bg-white px-2 text-[11px] font-semibold text-slate-600 hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {polishingPrompt ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                ) : (
+                  <WandSparkles className="h-3.5 w-3.5" aria-hidden="true" />
+                )}
+                润色
+              </button>
+            </span>
             <textarea
               ref={promptRef}
               value={prompt}

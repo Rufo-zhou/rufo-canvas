@@ -34,8 +34,8 @@ export function ImageAssetNode({ id, data, selected }: NodeProps<CanvasNode>) {
     <div
       className={
         selected
-          ? "group relative h-full w-full overflow-visible rounded-lg ring-2 ring-slate-950 ring-offset-2 ring-offset-[#f7f7f8]"
-          : "group relative h-full w-full overflow-visible rounded-lg"
+          ? "group relative h-full w-full overflow-visible ring-2 ring-slate-950 ring-offset-2 ring-offset-[#f7f7f8]"
+          : "group relative h-full w-full overflow-visible"
       }
     >
       <NodeResizer
@@ -131,11 +131,11 @@ export function ImageAssetNode({ id, data, selected }: NodeProps<CanvasNode>) {
         </div>
       ) : null}
 
-      <div className="h-full w-full overflow-hidden rounded-lg border border-slate-200 bg-white shadow-lg shadow-slate-200/60">
+      <div className="h-full w-full overflow-hidden">
         {assetUrl && mediaType === "video" ? (
           <video
             src={assetUrl}
-            className="nodrag nowheel h-full w-full bg-black object-contain"
+            className="nodrag nowheel h-full w-full object-cover"
             controls
             loop
             playsInline
@@ -146,7 +146,7 @@ export function ImageAssetNode({ id, data, selected }: NodeProps<CanvasNode>) {
           <img
             src={assetUrl}
             alt={data.label}
-            className="h-full w-full bg-slate-100 object-contain"
+            className="h-full w-full object-cover"
             draggable={false}
           />
         ) : (
@@ -159,12 +159,20 @@ export function ImageAssetNode({ id, data, selected }: NodeProps<CanvasNode>) {
       <Handle
         type="target"
         position={Position.Left}
-        className="!h-3 !w-3 !border-2 !border-white !bg-slate-900"
+        className={
+          selected
+            ? "!h-3 !w-3 !border-2 !border-white !bg-slate-900"
+            : "!h-3 !w-3 !border-2 !border-white !bg-slate-900 opacity-0 transition-opacity group-hover:opacity-100"
+        }
       />
       <Handle
         type="source"
         position={Position.Right}
-        className="!h-3 !w-3 !border-2 !border-white !bg-slate-900"
+        className={
+          selected
+            ? "!h-3 !w-3 !border-2 !border-white !bg-slate-900"
+            : "!h-3 !w-3 !border-2 !border-white !bg-slate-900 opacity-0 transition-opacity group-hover:opacity-100"
+        }
       />
     </div>
   );
