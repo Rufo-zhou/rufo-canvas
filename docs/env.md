@@ -19,6 +19,7 @@
 | `NEXT_PUBLIC_SUPABASE_URL` | 是 | 浏览器可见 | Supabase Project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | 是 | 浏览器可见 | Supabase anon key |
 | `NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET` | 是 | 浏览器可见 | 生成图片与参考图 Storage bucket，默认 `generated-assets` |
+| `NEXT_PUBLIC_GOOGLE_AUTH_ENABLED` | 否 | 浏览器可见 | Google OAuth 在 Supabase 后台配置完成后设为 `true`，显示 Google 登录入口 |
 | `SUPABASE_SERVICE_ROLE_KEY` | 服务端写入时必填 | 服务端 | Service role key |
 
 ## 4. Nano Banana

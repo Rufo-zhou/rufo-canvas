@@ -37,11 +37,12 @@ SUPABASE_SERVICE_ROLE_KEY=
 IMAGE_GENERATION_MOCK=true
 POLLINATIONS_API_KEY=
 HUGGINGFACE_API_KEY=
+AGNES_API_KEY=
 ```
 
 `NEXT_PUBLIC_APP_MODE=demo` enables local authentication, projects, canvas persistence, and mock image generation without Supabase credentials.
 
-To use Supabase, set `NEXT_PUBLIC_APP_MODE=supabase`, fill the Supabase variables, and apply `supabase/migrations/0001_initial_schema.sql`.
+To use Supabase, set `NEXT_PUBLIC_APP_MODE=supabase`, fill the Supabase variables, and apply every SQL file in `supabase/migrations/` in filename order.
 
 Use `IMAGE_GENERATION_MOCK=true` to verify the complete cloud data flow without third-party Nano Banana or GPTlmage2 keys.
 
