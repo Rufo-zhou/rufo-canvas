@@ -1,6 +1,6 @@
 "use client";
 
-import { Handle, Position, type NodeProps } from "@xyflow/react";
+import { type NodeProps } from "@xyflow/react";
 import {
   CircleAlert,
   Film,
@@ -10,6 +10,7 @@ import {
   Sparkles
 } from "lucide-react";
 import { useCanvasNodeActions } from "./CanvasNodeActionsContext";
+import { CanvasConnectionHandle } from "./CanvasConnectionHandle";
 import type { CanvasNode } from "./types";
 
 export function GenerationTaskNode({ id, data, selected }: NodeProps<CanvasNode>) {
@@ -28,14 +29,9 @@ export function GenerationTaskNode({ id, data, selected }: NodeProps<CanvasNode>
           : "group relative h-full w-full overflow-visible"
       }
     >
-      <Handle
+      <CanvasConnectionHandle
         type="target"
-        position={Position.Left}
-        className={
-          selected
-            ? "!h-3 !w-3 !border-2 !border-white !bg-slate-900"
-            : "!h-3 !w-3 !border-2 !border-white !bg-slate-900 opacity-0 transition-opacity group-hover:opacity-100"
-        }
+        visible={selected}
       />
 
       <div className="relative h-full w-full overflow-hidden bg-slate-100">
@@ -102,14 +98,9 @@ export function GenerationTaskNode({ id, data, selected }: NodeProps<CanvasNode>
         </div>
       </div>
 
-      <Handle
+      <CanvasConnectionHandle
         type="source"
-        position={Position.Right}
-        className={
-          selected
-            ? "!h-3 !w-3 !border-2 !border-white !bg-slate-900"
-            : "!h-3 !w-3 !border-2 !border-white !bg-slate-900 opacity-0 transition-opacity group-hover:opacity-100"
-        }
+        visible={selected}
       />
     </div>
   );

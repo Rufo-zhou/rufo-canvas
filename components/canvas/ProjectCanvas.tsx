@@ -107,6 +107,8 @@ type CanvasTool =
 
 type FloatingPanel = "layers" | "assets" | null;
 
+type CanvasAspectRatio = NonNullable<GeneratedCanvasMedia["aspectRatio"]>;
+
 type CanvasHistoryEntry = {
   nodes: CanvasNode[];
   edges: CanvasEdge[];
@@ -906,7 +908,7 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
       setNodes((current) => {
         const next = [
           ...current,
-          createDraftGenerationNode(draftNodeId!, draftPosition)
+          createDraftGenerationNode(draftNodeId!, draftPosition, node)
         ];
         nodesRef.current = next;
         return next;
@@ -934,6 +936,10 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
       label: node.data.label,
       assetUrl: node.data.assetUrl,
       storagePath: node.data.storagePath,
+      mediaType: node.data.mediaType ?? "image",
+      aspectRatio:
+        normalizeCanvasAspectRatio(node.data.aspectRatio) ??
+        inferClosestAspectRatioFromNode(node),
       draftNodeId
     });
     setSidebarOpen(true);
@@ -1415,21 +1421,33 @@ function createGenerationNode(
 
 function createDraftGenerationNode(
   id: string,
-  position: { x: number; y: number }
+  position: { x: number; y: number },
+  sourceNode?: CanvasNode
 ): CanvasNode {
+  const sourceSize = sourceNode ? readCanvasNodeSize(sourceNode) : null;
+  const mediaType = sourceNode?.data.mediaType ?? "image";
+  const aspectRatio =
+    normalizeCanvasAspectRatio(sourceNode?.data.aspectRatio) ??
+    (sourceSize
+      ? inferClosestAspectRatio(sourceSize.width, sourceSize.height)
+      : undefined);
+
   return {
     id,
     type: "generationTask",
     position,
-    style: { width: 300, height: 300 },
+    style: sourceSize ?? { width: 300, height: 300 },
     data: {
       kind: "generation",
       label: "等待填写生成描述",
       prompt: "等待填写生成描述",
-      mediaType: "image",
+      mediaType,
+      aspectRatio: aspectRatio ?? undefined,
       status: "draft",
       statusLabel: "等待设置参数",
-      progress: 0
+      progress: 0,
+      width: sourceSize?.width,
+      height: sourceSize?.height
     }
   };
 }
@@ -1665,6 +1683,69 @@ function getCanvasMediaSize(
 function readPositiveNumber(value: unknown) {
   const number = typeof value === "number" ? value : Number(value);
   return Number.isFinite(number) && number > 0 ? number : null;
+}
+
+function readCanvasNodeSize(node: CanvasNode) {
+  const width =
+    readPositiveNumber(node.measured?.width) ??
+    readPositiveNumber(node.style?.width) ??
+    readPositiveNumber(node.initialWidth) ??
+    readPositiveNumber(node.data.width);
+  const height =
+    readPositiveNumber(node.measured?.height) ??
+    readPositiveNumber(node.style?.height) ??
+    readPositiveNumber(node.initialHeight) ??
+    readPositiveNumber(node.data.height);
+
+  return width && height
+    ? {
+        width: Math.round(width),
+        height: Math.round(height)
+      }
+    : null;
+}
+
+function inferClosestAspectRatioFromNode(node: CanvasNode) {
+  const size = readCanvasNodeSize(node);
+  return size ? inferClosestAspectRatio(size.width, size.height) : undefined;
+}
+
+function normalizeCanvasAspectRatio(value: unknown): CanvasAspectRatio | undefined {
+  return value === "1:1" ||
+    value === "4:3" ||
+    value === "3:4" ||
+    value === "3:2" ||
+    value === "2:3" ||
+    value === "16:9" ||
+    value === "9:16" ||
+    value === "21:9"
+    ? value
+    : undefined;
+}
+
+function inferClosestAspectRatio(
+  width: number,
+  height: number
+): CanvasAspectRatio {
+  const ratio = width / height;
+  const candidates: CanvasAspectRatio[] = [
+    "1:1",
+    "4:3",
+    "3:4",
+    "3:2",
+    "2:3",
+    "16:9",
+    "9:16",
+    "21:9"
+  ];
+
+  return candidates.reduce((best, candidate) => {
+    const candidateRatio = readAspectRatioValue(candidate) ?? 1;
+    const bestRatio = readAspectRatioValue(best) ?? 1;
+    return Math.abs(candidateRatio - ratio) < Math.abs(bestRatio - ratio)
+      ? candidate
+      : best;
+  }, "1:1" as CanvasAspectRatio);
 }
 
 async function readImageFileDimensions(file: File) {

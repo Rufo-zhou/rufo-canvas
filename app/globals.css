@@ -30,3 +30,35 @@ textarea,
 select {
   font: inherit;
 }
+
+.rufo-flow-handle {
+  width: 44px !important;
+  height: 44px !important;
+  border: 0 !important;
+  background: transparent !important;
+  z-index: 30 !important;
+}
+
+.rufo-flow-handle::after {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  content: "";
+  border: 2px solid #ffffff;
+  border-radius: 9999px;
+  background: #0f172a;
+  box-shadow: 0 8px 18px rgb(15 23 42 / 18%);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.86);
+  transition:
+    opacity 140ms ease,
+    transform 140ms ease;
+}
+
+.group:hover .rufo-flow-handle-muted::after,
+.rufo-flow-handle-visible::after {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}

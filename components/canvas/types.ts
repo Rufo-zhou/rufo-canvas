@@ -89,6 +89,8 @@ export type CanvasReferenceRequest = {
   label: string;
   assetUrl: string;
   storagePath: string;
+  mediaType?: MediaType;
+  aspectRatio?: MediaAspectRatio;
   draftNodeId?: string;
 };
 

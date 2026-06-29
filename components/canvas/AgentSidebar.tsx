@@ -299,18 +299,33 @@ export function AgentSidebar({
       return;
     }
 
+    const requestMediaType = referenceRequest.mediaType ?? mediaType;
+    const requestAspectRatio = referenceRequest.aspectRatio;
     const preferredMode: MediaReferenceMode =
-      mediaType === "video" ? "start-frame" : "image";
+      requestMediaType === "video" ? "start-frame" : "image";
     const targetModel =
       effectiveModels.find(
         (model) =>
-          model.mediaType === mediaType &&
+          model.mediaType === requestMediaType &&
+          model.available &&
+          model.referenceModes?.includes(preferredMode) &&
+          (!requestAspectRatio || model.aspectRatios.includes(requestAspectRatio))
+      ) ??
+      effectiveModels.find(
+        (model) =>
+          model.mediaType === requestMediaType &&
+          model.referenceModes?.includes(preferredMode) &&
+          (!requestAspectRatio || model.aspectRatios.includes(requestAspectRatio))
+      ) ??
+      effectiveModels.find(
+        (model) =>
+          model.mediaType === requestMediaType &&
           model.available &&
           model.referenceModes?.includes(preferredMode)
       ) ??
       effectiveModels.find(
         (model) =>
-          model.mediaType === mediaType &&
+          model.mediaType === requestMediaType &&
           model.referenceModes?.includes(preferredMode)
       );
 
@@ -320,7 +335,11 @@ export function AgentSidebar({
     }
 
     handledReferenceRequestRef.current = referenceRequest.requestId;
+    setMediaType(requestMediaType);
     setModelId(targetModel.id);
+    if (requestAspectRatio) {
+      setAspectRatio(requestAspectRatio);
+    }
     setReferenceMode(preferredMode);
     setCanvasReferences([referenceRequest]);
     setDraftNodeId(referenceRequest.draftNodeId);

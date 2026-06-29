@@ -1,8 +1,9 @@
 "use client";
 
-import { Handle, NodeResizer, Position, useReactFlow, type NodeProps } from "@xyflow/react";
+import { NodeResizer, useReactFlow, type NodeProps } from "@xyflow/react";
 import { MapPin } from "lucide-react";
 import { useCanvasNodeActions } from "./CanvasNodeActionsContext";
+import { CanvasConnectionHandle } from "./CanvasConnectionHandle";
 import type { CanvasNode } from "./types";
 
 export function CanvasElementNode({ id, data, selected }: NodeProps<CanvasNode>) {
@@ -94,11 +95,11 @@ export function CanvasElementNode({ id, data, selected }: NodeProps<CanvasNode>)
         onResizeEnd={() => actions?.onTransformEnd()}
         handleClassName="!h-2.5 !w-2.5 !border !border-white"
       />
-      <Handle type="target" position={Position.Left} className="!h-2 !w-2 !bg-slate-400" />
+      <CanvasConnectionHandle type="target" visible={selected} />
       <div className="flex h-9 items-center border-b border-dashed border-slate-300 px-3 text-xs font-semibold text-slate-600">
         {data.label}
       </div>
-      <Handle type="source" position={Position.Right} className="!h-2 !w-2 !bg-slate-400" />
+      <CanvasConnectionHandle type="source" visible={selected} />
     </div>
   );
 }
@@ -106,16 +107,8 @@ export function CanvasElementNode({ id, data, selected }: NodeProps<CanvasNode>)
 function CanvasHandles() {
   return (
     <>
-      <Handle
-        type="target"
-        position={Position.Left}
-        className="!h-3 !w-3 !border-2 !border-white !bg-slate-900"
-      />
-      <Handle
-        type="source"
-        position={Position.Right}
-        className="!h-3 !w-3 !border-2 !border-white !bg-slate-900"
-      />
+      <CanvasConnectionHandle type="target" visible />
+      <CanvasConnectionHandle type="source" visible />
     </>
   );
 }
