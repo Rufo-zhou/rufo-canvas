@@ -33,6 +33,7 @@ import {
   Trash2,
   Trophy,
   WandSparkles,
+  X,
   Zap,
   type LucideIcon
 } from "lucide-react";
@@ -86,6 +87,38 @@ type ArenaCard = {
   title: string;
   description: string;
   prize: string;
+};
+
+type WorkflowDetail = {
+  id: string;
+  title: string;
+  description: string;
+  tag: string;
+  image?: string;
+  prompt: string;
+  steps: string[];
+  outputs: string[];
+  models: string[];
+};
+
+type WorkflowCopy = {
+  details: string;
+  openDetail: string;
+  usePrompt: string;
+  startCanvas: string;
+  close: string;
+  promptTitle: string;
+  stepsTitle: string;
+  outputsTitle: string;
+  modelsTitle: string;
+  promptApplied: string;
+  featuredPrefix: string;
+  templatePrefix: string;
+  challengePrefix: string;
+  promptSuffix: string;
+  steps: string[];
+  outputs: string[];
+  models: string[];
 };
 
 type DashboardCopy = {
@@ -158,8 +191,8 @@ const copyByLanguage: Record<RufoLanguage, DashboardCopy> = {
     nav: {
       home: "主页",
       workspace: "工作空间",
-      tv: "Rufo TV",
-      arena: "竞技场",
+      tv: "流程工坊",
+      arena: "挑战计划",
       templates: "模板库",
       freeTrial: "免费体验",
       logout: "退出"
@@ -180,8 +213,8 @@ const copyByLanguage: Record<RufoLanguage, DashboardCopy> = {
     },
     sections: {
       featured: "精选推荐",
-      explore: "探索 Rufo TV",
-      arena: "探索竞技场",
+      explore: "Rufo 流程工坊",
+      arena: "Rufo 挑战计划",
       templates: "模板库",
       recent: "最近项目",
       allProjects: "全部项目",
@@ -320,8 +353,8 @@ const copyByLanguage: Record<RufoLanguage, DashboardCopy> = {
     nav: {
       home: "Home",
       workspace: "Workspace",
-      tv: "Rufo TV",
-      arena: "Arena",
+      tv: "Workflow Lab",
+      arena: "Challenge Lab",
       templates: "Templates",
       freeTrial: "Try free",
       logout: "Sign out"
@@ -342,8 +375,8 @@ const copyByLanguage: Record<RufoLanguage, DashboardCopy> = {
     },
     sections: {
       featured: "Featured",
-      explore: "Explore Rufo TV",
-      arena: "Explore Arena",
+      explore: "Rufo Workflow Lab",
+      arena: "Rufo Challenge Lab",
       templates: "Templates",
       recent: "Recent Projects",
       allProjects: "All Projects",
@@ -482,8 +515,8 @@ const copyByLanguage: Record<RufoLanguage, DashboardCopy> = {
     nav: {
       home: "ホーム",
       workspace: "ワークスペース",
-      tv: "Rufo TV",
-      arena: "アリーナ",
+      tv: "ワークフローラボ",
+      arena: "チャレンジ",
       templates: "テンプレート",
       freeTrial: "無料で試す",
       logout: "ログアウト"
@@ -504,8 +537,8 @@ const copyByLanguage: Record<RufoLanguage, DashboardCopy> = {
     },
     sections: {
       featured: "おすすめ",
-      explore: "Rufo TV を探索",
-      arena: "アリーナを探索",
+      explore: "Rufo ワークフローラボ",
+      arena: "Rufo チャレンジ",
       templates: "テンプレート",
       recent: "最近のプロジェクト",
       allProjects: "すべてのプロジェクト",
@@ -644,8 +677,8 @@ const copyByLanguage: Record<RufoLanguage, DashboardCopy> = {
     nav: {
       home: "홈",
       workspace: "워크스페이스",
-      tv: "Rufo TV",
-      arena: "아레나",
+      tv: "워크플로우 랩",
+      arena: "챌린지",
       templates: "템플릿",
       freeTrial: "무료 체험",
       logout: "로그아웃"
@@ -666,8 +699,8 @@ const copyByLanguage: Record<RufoLanguage, DashboardCopy> = {
     },
     sections: {
       featured: "추천",
-      explore: "Rufo TV 탐색",
-      arena: "아레나 탐색",
+      explore: "Rufo 워크플로우 랩",
+      arena: "Rufo 챌린지",
       templates: "템플릿",
       recent: "최근 프로젝트",
       allProjects: "전체 프로젝트",
@@ -811,6 +844,145 @@ const languageLabels: Record<RufoLanguage, string> = {
   ko: "한국어"
 };
 
+const workflowCopyByLanguage: Record<RufoLanguage, WorkflowCopy> = {
+  "zh-CN": {
+    details: "Rufo 工作流详情",
+    openDetail: "查看工作流",
+    usePrompt: "填入输入框",
+    startCanvas: "直接创建画布",
+    close: "关闭",
+    promptTitle: "可执行提示词",
+    stepsTitle: "实操步骤",
+    outputsTitle: "预期产出",
+    modelsTitle: "建议能力",
+    promptApplied: "已填入创作输入框，可继续编辑或直接开始。",
+    featuredPrefix: "请基于这个 Rufo 原创工作流创建一个可执行的无限画布项目：",
+    templatePrefix: "请使用这个 Rufo 模板启动一个可复用的创作项目：",
+    challengePrefix: "请基于这个 Rufo 挑战计划创建项目：",
+    promptSuffix: "请拆解为首批节点、参考图策略、推荐比例、图片/视频模型选择、失败替代方案和后续迭代路径。",
+    steps: [
+      "在画布中心建立目标节点，写清楚风格、比例、使用场景和交付格式。",
+      "生成首批 3-5 个图片或视频节点，保留失败节点原因与替代提示词。",
+      "从最满意的节点继续拉线生成变体，并用参考图模式保持主体一致。",
+      "整理成可复用模板，保存生成记录、素材和最终交付节点。"
+    ],
+    outputs: [
+      "一个可继续迭代的 Rufo 无限画布项目",
+      "可直接复制和再次润色的强化提示词",
+      "图片/视频节点、参考素材和生成历史",
+      "适合团队复用的流程模板"
+    ],
+    models: [
+      "Sana Free 用于快速构图",
+      "Agnes Image 2.0/2.1 用于高质量图片",
+      "Agnes Video 2.0 用于短视频首尾帧",
+      "提示词润色 Agent 用于稳定输出"
+    ]
+  },
+  en: {
+    details: "Rufo workflow details",
+    openDetail: "View workflow",
+    usePrompt: "Use prompt",
+    startCanvas: "Create canvas",
+    close: "Close",
+    promptTitle: "Executable prompt",
+    stepsTitle: "Action steps",
+    outputsTitle: "Expected outputs",
+    modelsTitle: "Suggested capabilities",
+    promptApplied: "Prompt added to the composer. You can edit it or start now.",
+    featuredPrefix: "Create an executable Rufo infinite-canvas project from this original workflow:",
+    templatePrefix: "Start a reusable Rufo creative project with this template:",
+    challengePrefix: "Create a Rufo project from this challenge plan:",
+    promptSuffix: "Break it into first nodes, reference strategy, recommended aspect ratios, image/video model choices, fallback prompts, and follow-up iterations.",
+    steps: [
+      "Create a goal node with style, aspect ratio, use case, and delivery format.",
+      "Generate the first 3-5 image or video nodes and keep failure reasons with alternate prompts.",
+      "Continue from the best node with reference generation to preserve subject consistency.",
+      "Save the generation history, assets, and final node set as a reusable workflow."
+    ],
+    outputs: [
+      "A Rufo infinite-canvas project ready for iteration",
+      "A strengthened prompt that can be copied and polished again",
+      "Image/video nodes, references, and generation history",
+      "A reusable workflow template for teams"
+    ],
+    models: [
+      "Sana Free for fast composition",
+      "Agnes Image 2.0/2.1 for high-quality images",
+      "Agnes Video 2.0 for short-video frames",
+      "Prompt polish Agent for more stable results"
+    ]
+  },
+  ja: {
+    details: "Rufo ワークフロー詳細",
+    openDetail: "ワークフローを見る",
+    usePrompt: "入力欄へ入れる",
+    startCanvas: "キャンバス作成",
+    close: "閉じる",
+    promptTitle: "実行用プロンプト",
+    stepsTitle: "実操作手順",
+    outputsTitle: "想定アウトプット",
+    modelsTitle: "推奨機能",
+    promptApplied: "作成欄に入力しました。編集してから開始できます。",
+    featuredPrefix: "この Rufo オリジナルワークフローから実行可能な無限キャンバスプロジェクトを作成してください：",
+    templatePrefix: "この Rufo テンプレートで再利用可能な制作プロジェクトを開始してください：",
+    challengePrefix: "この Rufo チャレンジ計画からプロジェクトを作成してください：",
+    promptSuffix: "初期ノード、参考素材戦略、推奨比率、画像/動画モデル、失敗時の代替案、次の反復手順に分解してください。",
+    steps: [
+      "目的ノードを作り、スタイル、比率、用途、納品形式を明確にする。",
+      "最初の画像/動画ノードを3-5個生成し、失敗理由と代替プロンプトを残す。",
+      "最良ノードから参考生成で派生させ、主体の一貫性を保つ。",
+      "生成履歴、素材、最終ノードを保存し、再利用できる形に整理する。"
+    ],
+    outputs: [
+      "反復可能な Rufo 無限キャンバスプロジェクト",
+      "コピーして再度改善できる強化プロンプト",
+      "画像/動画ノード、参考素材、生成履歴",
+      "チームで再利用できるワークフローテンプレート"
+    ],
+    models: [
+      "Sana Free で素早く構図作成",
+      "Agnes Image 2.0/2.1 で高品質画像",
+      "Agnes Video 2.0 で短尺動画フレーム",
+      "Prompt Agent で出力安定化"
+    ]
+  },
+  ko: {
+    details: "Rufo 워크플로우 상세",
+    openDetail: "워크플로우 보기",
+    usePrompt: "입력창에 넣기",
+    startCanvas: "캔버스 만들기",
+    close: "닫기",
+    promptTitle: "실행 프롬프트",
+    stepsTitle: "실행 단계",
+    outputsTitle: "예상 결과",
+    modelsTitle: "추천 기능",
+    promptApplied: "입력창에 넣었습니다. 수정하거나 바로 시작할 수 있습니다.",
+    featuredPrefix: "이 Rufo 오리지널 워크플로우를 기반으로 실행 가능한 무한 캔버스 프로젝트를 만드세요:",
+    templatePrefix: "이 Rufo 템플릿으로 재사용 가능한 창작 프로젝트를 시작하세요:",
+    challengePrefix: "이 Rufo 챌린지 계획으로 프로젝트를 만드세요:",
+    promptSuffix: "첫 노드, 레퍼런스 전략, 추천 비율, 이미지/영상 모델, 실패 대안, 후속 반복 경로로 나눠주세요.",
+    steps: [
+      "목표 노드를 만들고 스타일, 비율, 사용 목적, 납품 형식을 명확히 합니다.",
+      "첫 이미지/영상 노드 3-5개를 생성하고 실패 이유와 대체 프롬프트를 남깁니다.",
+      "가장 좋은 노드에서 레퍼런스 생성으로 이어가며 주체 일관성을 유지합니다.",
+      "생성 기록, 소재, 최종 노드를 저장해 재사용 가능한 흐름으로 정리합니다."
+    ],
+    outputs: [
+      "반복 가능한 Rufo 무한 캔버스 프로젝트",
+      "복사하고 다시 다듬을 수 있는 강화 프롬프트",
+      "이미지/영상 노드, 레퍼런스, 생성 기록",
+      "팀이 재사용할 수 있는 워크플로우 템플릿"
+    ],
+    models: [
+      "Sana Free로 빠른 구도 생성",
+      "Agnes Image 2.0/2.1로 고품질 이미지",
+      "Agnes Video 2.0으로 짧은 영상 프레임",
+      "Prompt Agent로 안정적인 출력"
+    ]
+  }
+};
+
 export function ProjectDashboard({ mode }: ProjectDashboardProps) {
   return (
     <AuthGate>
@@ -823,6 +995,7 @@ function ProjectDashboardContent({ mode }: ProjectDashboardProps) {
   const router = useRouter();
   const { language } = usePreferences();
   const copy = copyByLanguage[language];
+  const workflowCopy = workflowCopyByLanguage[language];
   const { mode: appMode, user, signOut } = useAuth();
   const supabase = appMode === "supabase" ? getSupabaseBrowserClient() : null;
   const promptRef = useRef<HTMLTextAreaElement | null>(null);
@@ -832,6 +1005,8 @@ function ProjectDashboardContent({ mode }: ProjectDashboardProps) {
   const [prompt, setPrompt] = useState("");
   const [projectName, setProjectName] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [status, setStatus] = useState<string | null>(null);
+  const [activeWorkflow, setActiveWorkflow] = useState<WorkflowDetail | null>(null);
 
   const refreshProjects = useCallback(async () => {
     setLoading(true);
@@ -854,18 +1029,24 @@ function ProjectDashboardContent({ mode }: ProjectDashboardProps) {
     void refreshProjects();
   }, [refreshProjects]);
 
-  async function handleCreateFromPrompt(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
+  async function createProjectFromPrompt(
+    nextPrompt: string,
+    fallbackName = copy.projects.defaultName
+  ) {
     if (!user) {
       return;
     }
 
     setCreating(true);
     setError(null);
+    setStatus(null);
 
     try {
-      const name = prompt.trim().slice(0, 28) || copy.projects.defaultName;
+      const trimmedPrompt = nextPrompt.trim();
+      const name =
+        fallbackName.trim().slice(0, 48) ||
+        trimmedPrompt.slice(0, 28) ||
+        copy.projects.defaultName;
       const project =
         appMode === "demo"
           ? await createLocalProject(name, user.id)
@@ -873,8 +1054,8 @@ function ProjectDashboardContent({ mode }: ProjectDashboardProps) {
               name,
               ownerId: user.id
             });
-      const query = prompt.trim()
-        ? `?prompt=${encodeURIComponent(prompt.trim())}`
+      const query = trimmedPrompt
+        ? `?prompt=${encodeURIComponent(trimmedPrompt)}`
         : "";
       router.push(`/projects/${project.id}${query}`);
     } catch (caughtError) {
@@ -882,6 +1063,11 @@ function ProjectDashboardContent({ mode }: ProjectDashboardProps) {
     } finally {
       setCreating(false);
     }
+  }
+
+  async function handleCreateFromPrompt(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await createProjectFromPrompt(prompt);
   }
 
   async function handleCreateProject(event: FormEvent<HTMLFormElement>) {
@@ -930,7 +1116,25 @@ function ProjectDashboardContent({ mode }: ProjectDashboardProps) {
 
   function applyQuickPrompt(nextPrompt: string) {
     setPrompt(nextPrompt);
+    setStatus(workflowCopy.promptApplied);
     window.setTimeout(() => promptRef.current?.focus(), 0);
+  }
+
+  function openWorkflow(workflow: WorkflowDetail) {
+    setActiveWorkflow(workflow);
+  }
+
+  function applyWorkflowPrompt(workflow: WorkflowDetail) {
+    setPrompt(workflow.prompt);
+    setStatus(workflowCopy.promptApplied);
+    setActiveWorkflow(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    window.setTimeout(() => promptRef.current?.focus(), 200);
+  }
+
+  async function startWorkflow(workflow: WorkflowDetail) {
+    setActiveWorkflow(null);
+    await createProjectFromPrompt(workflow.prompt, workflow.title);
   }
 
   return (
@@ -1066,6 +1270,11 @@ function ProjectDashboardContent({ mode }: ProjectDashboardProps) {
             {error}
           </p>
         ) : null}
+        {status ? (
+          <p className="mx-auto mt-6 max-w-4xl rounded-xl border border-emerald-400/20 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-700 dark:text-emerald-100">
+            {status}
+          </p>
+        ) : null}
       </section>
 
       {mode === "home" ? (
@@ -1077,7 +1286,18 @@ function ProjectDashboardContent({ mode }: ProjectDashboardProps) {
           >
             <div className="rufo-hide-scrollbar flex gap-3 overflow-x-auto px-4 pb-2 sm:px-7">
               {copy.featuredCards.map((card, index) => (
-                <FeaturedCardView key={card.title} card={card} index={index} />
+                <FeaturedCardView
+                  key={card.title}
+                  card={card}
+                  index={index}
+                  workflowCopy={workflowCopy}
+                  onOpen={() =>
+                    openWorkflow(buildFeaturedWorkflow(workflowCopy, card, index))
+                  }
+                  onStart={() =>
+                    void startWorkflow(buildFeaturedWorkflow(workflowCopy, card, index))
+                  }
+                />
               ))}
             </div>
           </HomeSection>
@@ -1093,8 +1313,15 @@ function ProjectDashboardContent({ mode }: ProjectDashboardProps) {
                 <ShowcaseCard
                   key={item.title}
                   copy={copy}
+                  workflowCopy={workflowCopy}
                   item={item}
                   index={index}
+                  onOpen={() =>
+                    openWorkflow(buildShowcaseWorkflow(workflowCopy, item, index))
+                  }
+                  onStart={() =>
+                    void startWorkflow(buildShowcaseWorkflow(workflowCopy, item, index))
+                  }
                 />
               ))}
             </div>
@@ -1107,8 +1334,18 @@ function ProjectDashboardContent({ mode }: ProjectDashboardProps) {
             actionHref="/projects"
           >
             <div className="grid gap-3 px-4 sm:px-7 lg:grid-cols-3">
-              {copy.arenaCards.map((card) => (
-                <ArenaCardView key={card.title} card={card} />
+              {copy.arenaCards.map((card, index) => (
+                <ArenaCardView
+                  key={card.title}
+                  card={card}
+                  workflowCopy={workflowCopy}
+                  onOpen={() =>
+                    openWorkflow(buildArenaWorkflow(workflowCopy, card, index))
+                  }
+                  onStart={() =>
+                    void startWorkflow(buildArenaWorkflow(workflowCopy, card, index))
+                  }
+                />
               ))}
             </div>
           </HomeSection>
@@ -1124,7 +1361,9 @@ function ProjectDashboardContent({ mode }: ProjectDashboardProps) {
                 <button
                   key={item}
                   type="button"
-                  onClick={() => applyQuickPrompt(`${item}: ${copy.hero.placeholder}`)}
+                  onClick={() =>
+                    openWorkflow(buildTemplateWorkflow(workflowCopy, item, index))
+                  }
                   className="group flex h-28 items-end justify-between rounded-xl border border-[color:var(--rufo-home-border)] bg-[color:var(--rufo-home-card)] p-4 text-left transition hover:-translate-y-1 hover:bg-[color:var(--rufo-home-card-hover)]"
                 >
                   <span>
@@ -1179,6 +1418,17 @@ function ProjectDashboardContent({ mode }: ProjectDashboardProps) {
           )}
         </div>
       </HomeSection>
+
+      {activeWorkflow ? (
+        <WorkflowDialog
+          workflow={activeWorkflow}
+          copy={workflowCopy}
+          creating={creating}
+          onClose={() => setActiveWorkflow(null)}
+          onUsePrompt={() => applyWorkflowPrompt(activeWorkflow)}
+          onStart={() => void startWorkflow(activeWorkflow)}
+        />
+      ) : null}
 
       <footer className="mx-auto flex max-w-[1480px] flex-col gap-2 px-4 py-10 text-xs text-[color:var(--rufo-home-soft)] sm:px-7 md:flex-row md:items-center md:justify-between">
         <span>{copy.footer.name}</span>
@@ -1284,7 +1534,19 @@ function HomeSection({
   );
 }
 
-function FeaturedCardView({ card, index }: { card: FeaturedCard; index: number }) {
+function FeaturedCardView({
+  card,
+  index,
+  workflowCopy,
+  onOpen,
+  onStart
+}: {
+  card: FeaturedCard;
+  index: number;
+  workflowCopy: WorkflowCopy;
+  onOpen: () => void;
+  onStart: () => void;
+}) {
   return (
     <article
       className="rufo-home-fade-in group relative h-[305px] min-w-[min(470px,82vw)] overflow-hidden rounded-xl border border-[color:var(--rufo-home-border)] bg-[color:var(--rufo-home-card)] shadow-2xl shadow-[color:var(--rufo-home-shadow)] transition duration-300 hover:-translate-y-1 hover:bg-[color:var(--rufo-home-card-hover)]"
@@ -1304,6 +1566,22 @@ function FeaturedCardView({ card, index }: { card: FeaturedCard; index: number }
       <div className="absolute inset-x-0 bottom-0 p-5">
         <h3 className="text-base font-semibold text-white">{card.title}</h3>
         <p className="mt-2 text-sm leading-5 text-white/70">{card.subtitle}</p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={onOpen}
+            className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-slate-950 transition hover:bg-cyan-100"
+          >
+            {workflowCopy.openDetail}
+          </button>
+          <button
+            type="button"
+            onClick={onStart}
+            className="rounded-full bg-slate-950/75 px-3 py-1.5 text-xs font-semibold text-white ring-1 ring-white/20 transition hover:bg-slate-900"
+          >
+            {workflowCopy.startCanvas}
+          </button>
+        </div>
       </div>
     </article>
   );
@@ -1311,12 +1589,18 @@ function FeaturedCardView({ card, index }: { card: FeaturedCard; index: number }
 
 function ShowcaseCard({
   copy,
+  workflowCopy,
   item,
-  index
+  index,
+  onOpen,
+  onStart
 }: {
   copy: DashboardCopy;
+  workflowCopy: WorkflowCopy;
   item: ShowcaseItem;
   index: number;
+  onOpen: () => void;
+  onStart: () => void;
 }) {
   return (
     <article className="group overflow-hidden rounded-xl border border-[color:var(--rufo-home-border)] bg-[color:var(--rufo-home-card)] shadow-xl shadow-[color:var(--rufo-home-shadow)] transition duration-300 hover:-translate-y-1 hover:bg-[color:var(--rufo-home-card-hover)]">
@@ -1333,6 +1617,7 @@ function ShowcaseCard({
         </span>
         <button
           type="button"
+          onClick={onOpen}
           className="absolute bottom-3 right-3 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-slate-950 opacity-0 transition group-hover:opacity-100"
         >
           {copy.sections.viewProcess}
@@ -1348,12 +1633,38 @@ function ShowcaseCard({
             {item.stars}
           </span>
         </div>
+        <div className="mt-4 flex gap-2">
+          <button
+            type="button"
+            onClick={onOpen}
+            className="h-8 rounded-full border border-[color:var(--rufo-home-border)] px-3 text-xs font-semibold text-[color:var(--rufo-home-muted)] hover:bg-[color:var(--rufo-home-card-hover)] hover:text-[color:var(--rufo-home-fg)]"
+          >
+            {workflowCopy.openDetail}
+          </button>
+          <button
+            type="button"
+            onClick={onStart}
+            className="h-8 rounded-full bg-[color:var(--rufo-home-primary)] px-3 text-xs font-semibold text-[color:var(--rufo-home-primary-fg)] hover:opacity-90"
+          >
+            {workflowCopy.startCanvas}
+          </button>
+        </div>
       </div>
     </article>
   );
 }
 
-function ArenaCardView({ card }: { card: ArenaCard }) {
+function ArenaCardView({
+  card,
+  workflowCopy,
+  onOpen,
+  onStart
+}: {
+  card: ArenaCard;
+  workflowCopy: WorkflowCopy;
+  onOpen: () => void;
+  onStart: () => void;
+}) {
   return (
     <article className="min-h-56 rounded-xl border border-[color:var(--rufo-home-border)] bg-[color:var(--rufo-home-card)] p-5 shadow-xl shadow-[color:var(--rufo-home-shadow)]">
       <span className="inline-flex items-center gap-2 rounded-full bg-emerald-400/12 px-3 py-1 text-xs font-semibold text-emerald-500">
@@ -1363,7 +1674,161 @@ function ArenaCardView({ card }: { card: ArenaCard }) {
       <h3 className="mt-20 text-lg font-semibold text-[color:var(--rufo-home-fg)]">{card.title}</h3>
       <p className="mt-3 text-sm leading-6 text-[color:var(--rufo-home-muted)]">{card.description}</p>
       <p className="mt-4 text-sm font-semibold text-[color:var(--rufo-home-accent)]">{card.prize}</p>
+      <div className="mt-5 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={onOpen}
+          className="h-9 rounded-full border border-[color:var(--rufo-home-border)] px-3 text-xs font-semibold text-[color:var(--rufo-home-muted)] hover:bg-[color:var(--rufo-home-card-hover)] hover:text-[color:var(--rufo-home-fg)]"
+        >
+          {workflowCopy.openDetail}
+        </button>
+        <button
+          type="button"
+          onClick={onStart}
+          className="h-9 rounded-full bg-[color:var(--rufo-home-primary)] px-3 text-xs font-semibold text-[color:var(--rufo-home-primary-fg)] hover:opacity-90"
+        >
+          {workflowCopy.startCanvas}
+        </button>
+      </div>
     </article>
+  );
+}
+
+function WorkflowDialog({
+  workflow,
+  copy,
+  creating,
+  onClose,
+  onUsePrompt,
+  onStart
+}: {
+  workflow: WorkflowDetail;
+  copy: WorkflowCopy;
+  creating: boolean;
+  onClose: () => void;
+  onUsePrompt: () => void;
+  onStart: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm">
+      <section
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="workflow-dialog-title"
+        className="max-h-[min(820px,calc(100vh-32px))] w-full max-w-5xl overflow-hidden rounded-2xl border border-[color:var(--rufo-home-border)] bg-[color:var(--rufo-home-bg)] text-[color:var(--rufo-home-fg)] shadow-2xl shadow-black/30"
+      >
+        <header className="flex items-start justify-between gap-4 border-b border-[color:var(--rufo-home-border)] p-5">
+          <div>
+            <span className="inline-flex rounded-full bg-[color:var(--rufo-home-pill)] px-3 py-1 text-xs font-semibold text-[color:var(--rufo-home-accent)]">
+              {workflow.tag}
+            </span>
+            <h2 id="workflow-dialog-title" className="mt-3 text-2xl font-semibold tracking-normal">
+              {workflow.title}
+            </h2>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-[color:var(--rufo-home-muted)]">
+              {workflow.description}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            title={copy.close}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[color:var(--rufo-home-border)] bg-[color:var(--rufo-home-pill)] text-[color:var(--rufo-home-muted)] hover:bg-[color:var(--rufo-home-card-hover)] hover:text-[color:var(--rufo-home-fg)]"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </header>
+
+        <div className="grid max-h-[calc(100vh-190px)] overflow-y-auto lg:grid-cols-[minmax(0,1fr)_360px]">
+          <div className="p-5">
+            {workflow.image ? (
+              <div className="mb-5 overflow-hidden rounded-xl border border-[color:var(--rufo-home-border)] bg-[color:var(--rufo-home-card)]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={workflow.image}
+                  alt={workflow.title}
+                  className="aspect-video w-full object-cover opacity-85"
+                  draggable={false}
+                />
+              </div>
+            ) : null}
+
+            <InfoBlock title={copy.promptTitle}>
+              <p className="whitespace-pre-wrap text-sm leading-6 text-[color:var(--rufo-home-muted)]">
+                {workflow.prompt}
+              </p>
+            </InfoBlock>
+
+            <InfoBlock title={copy.stepsTitle}>
+              <ol className="space-y-2">
+                {workflow.steps.map((step, index) => (
+                  <li key={step} className="flex gap-3 text-sm leading-6 text-[color:var(--rufo-home-muted)]">
+                    <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[color:var(--rufo-home-primary)] text-xs font-semibold text-[color:var(--rufo-home-primary-fg)]">
+                      {index + 1}
+                    </span>
+                    <span>{step}</span>
+                  </li>
+                ))}
+              </ol>
+            </InfoBlock>
+          </div>
+
+          <aside className="border-t border-[color:var(--rufo-home-border)] p-5 lg:border-l lg:border-t-0">
+            <InfoBlock title={copy.outputsTitle}>
+              <ul className="space-y-2">
+                {workflow.outputs.map((output) => (
+                  <li key={output} className="rounded-lg bg-[color:var(--rufo-home-card)] px-3 py-2 text-sm text-[color:var(--rufo-home-muted)]">
+                    {output}
+                  </li>
+                ))}
+              </ul>
+            </InfoBlock>
+
+            <InfoBlock title={copy.modelsTitle}>
+              <ul className="space-y-2">
+                {workflow.models.map((model) => (
+                  <li key={model} className="rounded-lg border border-[color:var(--rufo-home-border)] px-3 py-2 text-sm text-[color:var(--rufo-home-muted)]">
+                    {model}
+                  </li>
+                ))}
+              </ul>
+            </InfoBlock>
+
+            <div className="mt-5 grid gap-2">
+              <button
+                type="button"
+                onClick={onStart}
+                disabled={creating}
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[color:var(--rufo-home-primary)] px-4 text-sm font-semibold text-[color:var(--rufo-home-primary-fg)] hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {creating ? (
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                ) : (
+                  <ArrowUp className="h-4 w-4" aria-hidden="true" />
+                )}
+                {copy.startCanvas}
+              </button>
+              <button
+                type="button"
+                onClick={onUsePrompt}
+                className="inline-flex h-11 items-center justify-center rounded-lg border border-[color:var(--rufo-home-border)] bg-[color:var(--rufo-home-card)] px-4 text-sm font-semibold text-[color:var(--rufo-home-fg)] hover:bg-[color:var(--rufo-home-card-hover)]"
+              >
+                {copy.usePrompt}
+              </button>
+            </div>
+          </aside>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function InfoBlock({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="mb-5">
+      <h3 className="mb-3 text-sm font-semibold text-[color:var(--rufo-home-fg)]">{title}</h3>
+      {children}
+    </section>
   );
 }
 
@@ -1455,6 +1920,76 @@ function ProjectCard({
       </div>
     </article>
   );
+}
+
+function buildFeaturedWorkflow(
+  copy: WorkflowCopy,
+  card: FeaturedCard,
+  index: number
+): WorkflowDetail {
+  return {
+    id: `featured-${index}`,
+    title: card.title,
+    description: card.subtitle,
+    tag: card.tag,
+    image: card.image,
+    prompt: `${copy.featuredPrefix}${card.title}\n${card.subtitle}\n\n${copy.promptSuffix}`,
+    steps: copy.steps,
+    outputs: copy.outputs,
+    models: copy.models
+  };
+}
+
+function buildShowcaseWorkflow(
+  copy: WorkflowCopy,
+  item: ShowcaseItem,
+  index: number
+): WorkflowDetail {
+  return {
+    id: `showcase-${index}`,
+    title: item.title,
+    description: `${item.author} · ${item.meta}`,
+    tag: "Rufo Workflow",
+    image: item.image,
+    prompt: `${copy.featuredPrefix}${item.title}\n${item.meta}\n\n${copy.promptSuffix}`,
+    steps: copy.steps,
+    outputs: copy.outputs,
+    models: copy.models
+  };
+}
+
+function buildArenaWorkflow(
+  copy: WorkflowCopy,
+  card: ArenaCard,
+  index: number
+): WorkflowDetail {
+  return {
+    id: `challenge-${index}`,
+    title: card.title,
+    description: card.description,
+    tag: card.status,
+    prompt: `${copy.challengePrefix}${card.title}\n${card.description}\n${card.prize}\n\n${copy.promptSuffix}`,
+    steps: copy.steps,
+    outputs: copy.outputs,
+    models: copy.models
+  };
+}
+
+function buildTemplateWorkflow(
+  copy: WorkflowCopy,
+  title: string,
+  index: number
+): WorkflowDetail {
+  return {
+    id: `template-${index}`,
+    title,
+    description: `${copy.templatePrefix}${title}`,
+    tag: "Rufo Template",
+    prompt: `${copy.templatePrefix}${title}\n\n${copy.promptSuffix}`,
+    steps: copy.steps,
+    outputs: copy.outputs,
+    models: copy.models
+  };
 }
 
 function formatProjectDate(value: string) {
