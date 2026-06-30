@@ -4,6 +4,42 @@
 
 :root {
   color-scheme: light;
+  --rufo-home-bg: #f7f7f8;
+  --rufo-home-grid-dot: rgb(15 23 42 / 0.1);
+  --rufo-home-fg: #0f172a;
+  --rufo-home-muted: rgb(51 65 85 / 0.68);
+  --rufo-home-soft: rgb(51 65 85 / 0.5);
+  --rufo-home-border: rgb(15 23 42 / 0.1);
+  --rufo-home-card: rgb(255 255 255 / 0.82);
+  --rufo-home-card-hover: rgb(255 255 255 / 0.95);
+  --rufo-home-glass: rgb(255 255 255 / 0.74);
+  --rufo-home-overlay: rgb(255 255 255 / 0.72);
+  --rufo-home-primary: #0f172a;
+  --rufo-home-primary-fg: #ffffff;
+  --rufo-home-pill: rgb(15 23 42 / 0.06);
+  --rufo-home-shadow: rgb(15 23 42 / 0.1);
+  --rufo-home-accent: #0284c7;
+  --rufo-home-danger: #dc2626;
+}
+
+html[data-rufo-theme="dark"] {
+  color-scheme: dark;
+  --rufo-home-bg: #050607;
+  --rufo-home-grid-dot: rgb(255 255 255 / 0.09);
+  --rufo-home-fg: #ffffff;
+  --rufo-home-muted: rgb(255 255 255 / 0.68);
+  --rufo-home-soft: rgb(255 255 255 / 0.45);
+  --rufo-home-border: rgb(255 255 255 / 0.1);
+  --rufo-home-card: rgb(255 255 255 / 0.055);
+  --rufo-home-card-hover: rgb(255 255 255 / 0.085);
+  --rufo-home-glass: rgb(5 6 7 / 0.86);
+  --rufo-home-overlay: rgb(0 0 0 / 0.6);
+  --rufo-home-primary: #ffffff;
+  --rufo-home-primary-fg: #0f172a;
+  --rufo-home-pill: rgb(255 255 255 / 0.07);
+  --rufo-home-shadow: rgb(0 0 0 / 0.38);
+  --rufo-home-accent: #38bdf8;
+  --rufo-home-danger: #fca5a5;
 }
 
 * {
@@ -29,6 +65,67 @@ input,
 textarea,
 select {
   font: inherit;
+}
+
+.rufo-home-grid {
+  background-color: var(--rufo-home-bg);
+  color: var(--rufo-home-fg);
+  background-image:
+    radial-gradient(var(--rufo-home-grid-dot) 1px, transparent 1px),
+    linear-gradient(180deg, rgb(255 255 255 / 0.06), transparent 28rem);
+  background-size:
+    24px 24px,
+    100% 100%;
+}
+
+.rufo-home-fade-in {
+  animation: rufoHomeFadeIn 520ms ease both;
+}
+
+.rufo-float-label {
+  animation: rufoFloatLabel 5.8s ease-in-out infinite;
+}
+
+.rufo-home-composer {
+  box-shadow: 0 24px 80px var(--rufo-home-shadow);
+}
+
+.rufo-hide-scrollbar {
+  scrollbar-width: none;
+}
+
+.rufo-hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+@keyframes rufoHomeFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes rufoFloatLabel {
+  0%,
+  100% {
+    transform: rotate(7deg) translateY(0);
+  }
+
+  50% {
+    transform: rotate(4deg) translateY(-7px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rufo-home-fade-in,
+  .rufo-float-label {
+    animation: none;
+  }
 }
 
 .rufo-flow-handle {

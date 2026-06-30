@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AuthProvider } from "@/components/auth/AuthProvider";
+import { PreferencesProvider } from "@/components/settings/PreferencesProvider";
 import "@xyflow/react/dist/style.css";
 import "./globals.css";
 
@@ -16,7 +17,9 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <body>
-        <AuthProvider>{children}</AuthProvider>
+        <PreferencesProvider>
+          <AuthProvider>{children}</AuthProvider>
+        </PreferencesProvider>
       </body>
     </html>
   );
