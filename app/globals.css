@@ -20,6 +20,20 @@
   --rufo-home-shadow: rgb(15 23 42 / 0.1);
   --rufo-home-accent: #0284c7;
   --rufo-home-danger: #dc2626;
+  --rufo-canvas-bg: #f7f7f8;
+  --rufo-canvas-panel: #ffffff;
+  --rufo-canvas-panel-soft: #f8fafc;
+  --rufo-canvas-panel-muted: #f1f5f9;
+  --rufo-canvas-fg: #0f172a;
+  --rufo-canvas-muted: #64748b;
+  --rufo-canvas-soft: #94a3b8;
+  --rufo-canvas-border: #e2e8f0;
+  --rufo-canvas-border-soft: #f1f5f9;
+  --rufo-canvas-button: #0f172a;
+  --rufo-canvas-button-fg: #ffffff;
+  --rufo-canvas-shadow: rgb(15 23 42 / 0.13);
+  --rufo-canvas-grid: #d8dde5;
+  --rufo-canvas-media-bg: rgb(15 23 42 / 0.05);
 }
 
 html[data-rufo-theme="dark"] {
@@ -40,6 +54,20 @@ html[data-rufo-theme="dark"] {
   --rufo-home-shadow: rgb(0 0 0 / 0.38);
   --rufo-home-accent: #38bdf8;
   --rufo-home-danger: #fca5a5;
+  --rufo-canvas-bg: #080b10;
+  --rufo-canvas-panel: #111827;
+  --rufo-canvas-panel-soft: #0f172a;
+  --rufo-canvas-panel-muted: #1e293b;
+  --rufo-canvas-fg: #f8fafc;
+  --rufo-canvas-muted: #cbd5e1;
+  --rufo-canvas-soft: #94a3b8;
+  --rufo-canvas-border: rgb(148 163 184 / 0.22);
+  --rufo-canvas-border-soft: rgb(148 163 184 / 0.14);
+  --rufo-canvas-button: #f8fafc;
+  --rufo-canvas-button-fg: #020617;
+  --rufo-canvas-shadow: rgb(0 0 0 / 0.42);
+  --rufo-canvas-grid: rgb(148 163 184 / 0.18);
+  --rufo-canvas-media-bg: rgb(255 255 255 / 0.045);
 }
 
 * {
@@ -96,6 +124,118 @@ select {
 
 .rufo-hide-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+.rufo-canvas {
+  background-color: var(--rufo-canvas-bg);
+  color: var(--rufo-canvas-fg);
+}
+
+.rufo-canvas .react-flow,
+.rufo-canvas .react-flow__renderer,
+.rufo-canvas .react-flow__pane {
+  background-color: var(--rufo-canvas-bg) !important;
+}
+
+.rufo-canvas .react-flow__background path {
+  stroke: var(--rufo-canvas-grid) !important;
+}
+
+.rufo-canvas .bg-white,
+.rufo-canvas .bg-white\/85,
+.rufo-canvas .bg-white\/90,
+.rufo-canvas .bg-white\/95 {
+  background-color: var(--rufo-canvas-panel) !important;
+}
+
+.rufo-canvas .bg-slate-50,
+.rufo-canvas .bg-slate-100 {
+  background-color: var(--rufo-canvas-panel-soft) !important;
+}
+
+.rufo-canvas .bg-slate-950\/5,
+.rufo-canvas .bg-white\/20 {
+  background-color: var(--rufo-canvas-media-bg) !important;
+}
+
+.rufo-canvas .bg-slate-950,
+.rufo-canvas .bg-slate-900,
+.rufo-canvas .bg-slate-950\/75,
+.rufo-canvas .bg-slate-950\/90 {
+  background-color: var(--rufo-canvas-button) !important;
+  color: var(--rufo-canvas-button-fg) !important;
+}
+
+.rufo-canvas .text-slate-950,
+.rufo-canvas .text-slate-900,
+.rufo-canvas .text-slate-800,
+.rufo-canvas .text-slate-700,
+.rufo-canvas .text-slate-600 {
+  color: var(--rufo-canvas-fg) !important;
+}
+
+.rufo-canvas .text-slate-500,
+.rufo-canvas .text-slate-400,
+.rufo-canvas .text-slate-300 {
+  color: var(--rufo-canvas-soft) !important;
+}
+
+.rufo-canvas .border-slate-400,
+.rufo-canvas .border-slate-300,
+.rufo-canvas .border-slate-200,
+.rufo-canvas .border-slate-100 {
+  border-color: var(--rufo-canvas-border) !important;
+}
+
+.rufo-canvas .border-white {
+  border-color: var(--rufo-canvas-panel) !important;
+}
+
+.rufo-canvas .border-b-slate-100,
+.rufo-canvas .border-t-slate-100 {
+  border-color: var(--rufo-canvas-border-soft) !important;
+}
+
+.rufo-canvas .shadow-slate-200\/70,
+.rufo-canvas .shadow-slate-200\/80,
+.rufo-canvas .shadow-sm,
+.rufo-canvas .shadow-lg,
+.rufo-canvas .shadow-xl,
+.rufo-canvas .shadow-2xl {
+  --tw-shadow-color: var(--rufo-canvas-shadow) !important;
+  --tw-shadow: var(--tw-shadow-colored) !important;
+}
+
+.rufo-canvas .hover\:bg-white:hover,
+.rufo-canvas .hover\:bg-slate-50:hover,
+.rufo-canvas .hover\:bg-slate-100:hover {
+  background-color: var(--rufo-canvas-panel-muted) !important;
+}
+
+.rufo-canvas .focus\:bg-slate-50:focus {
+  background-color: var(--rufo-canvas-panel-soft) !important;
+}
+
+.rufo-canvas input:not(.nodrag),
+.rufo-canvas textarea:not(.nodrag),
+.rufo-canvas select {
+  background-color: var(--rufo-canvas-panel) !important;
+  color: var(--rufo-canvas-fg) !important;
+}
+
+.rufo-canvas input::placeholder,
+.rufo-canvas textarea::placeholder {
+  color: var(--rufo-canvas-soft) !important;
+}
+
+.rufo-canvas .ring-offset-\[\#f7f7f8\] {
+  --tw-ring-offset-color: var(--rufo-canvas-bg) !important;
+}
+
+html[data-rufo-theme="dark"] .rufo-canvas .bg-black,
+html[data-rufo-theme="dark"] .rufo-canvas .bg-black\/55,
+html[data-rufo-theme="dark"] .rufo-canvas .bg-black\/75 {
+  background-color: rgb(0 0 0 / 0.82) !important;
 }
 
 @keyframes rufoHomeFadeIn {

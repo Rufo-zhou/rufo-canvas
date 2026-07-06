@@ -1251,8 +1251,8 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
     <div
       className={
         sidebarOpen
-          ? "grid h-screen grid-cols-[minmax(0,1fr)_380px] overflow-hidden bg-[#f7f7f8] max-lg:grid-cols-1"
-          : "grid h-screen grid-cols-1 overflow-hidden bg-[#f7f7f8]"
+          ? "rufo-canvas grid h-screen grid-cols-[minmax(0,1fr)_380px] overflow-hidden bg-[color:var(--rufo-canvas-bg)] text-[color:var(--rufo-canvas-fg)] max-lg:grid-cols-1"
+          : "rufo-canvas grid h-screen grid-cols-1 overflow-hidden bg-[color:var(--rufo-canvas-bg)] text-[color:var(--rufo-canvas-fg)]"
       }
     >
       <section ref={sectionRef} className="relative min-w-0 overflow-hidden">
@@ -1349,7 +1349,7 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
                 style: { stroke: "#64748b", strokeWidth: 1.5 }
               }}
               proOptions={{ hideAttribution: true }}
-              className="bg-[#f7f7f8]"
+              className="bg-[color:var(--rufo-canvas-bg)]"
             >
               {gridVisible ? <Background color="#d8dde5" gap={32} size={1} /> : null}
               {miniMapVisible ? (
