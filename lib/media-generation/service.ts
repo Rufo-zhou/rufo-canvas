@@ -186,7 +186,7 @@ async function generatePollinationsFreeImage(
 ): Promise<GeneratedMedia> {
   const width = clampDimension(input.width ?? 1024);
   const height = clampDimension(input.height ?? 1024);
-  const url = new URL(`https://image.pollinations.ai/prompt/${encodeURIComponent(input.prompt)}`);
+  const url = new URL(`https://image.pollinations.ai/prompt/${encodeURIComponent(promptWithReferenceFit(input))}`);
   url.searchParams.set("model", providerModel);
   url.searchParams.set("width", String(width));
   url.searchParams.set("height", String(height));
@@ -244,7 +244,7 @@ async function generatePollinationsMedia(
   }
 
   const url = new URL(
-    `https://gen.pollinations.ai/${mediaType}/${encodeURIComponent(input.prompt)}`
+    `https://gen.pollinations.ai/${mediaType}/${encodeURIComponent(promptWithReferenceFit(input))}`
   );
   url.searchParams.set("model", providerModel);
   url.searchParams.set("nologo", "true");
@@ -332,7 +332,7 @@ async function generateHuggingFaceMedia(
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        inputs: input.prompt,
+        inputs: promptWithReferenceFit(input),
         parameters: {
           width: input.width,
           height: input.height,
@@ -1033,11 +1033,15 @@ function agnesFrameCount(
 }
 
 function promptWithReferenceFit(input: GenerateMediaInput) {
+  const target = input.aspectRatio ?? "the requested aspect ratio";
+  const dimensionText =
+    input.width && input.height ? ` ${input.width}x${input.height}` : "";
+  const baseInstruction = `Compose natively for ${target}${dimensionText}. Preserve natural subject proportions and geometry; never stretch, squeeze, or distort people, products, logos, text, or reference content.`;
+
   if (!input.referenceImageUrls?.length) {
-    return input.prompt;
+    return `${input.prompt}\n\nCanvas aspect-ratio requirement: ${baseInstruction}`;
   }
 
-  const target = input.aspectRatio ?? "the requested aspect ratio";
   const instruction =
     input.referenceFit === "crop"
       ? `Recompose and intelligently crop the reference into ${target}. Preserve natural subject proportions and never stretch or squeeze the reference.`
@@ -1045,7 +1049,7 @@ function promptWithReferenceFit(input: GenerateMediaInput) {
         ? `Preserve the complete reference content inside ${target}. Keep natural proportions and extend the surrounding background without stretching.`
         : `Adapt the reference to ${target} by naturally outpainting and extending the composition. Preserve the subject's original proportions, identity, and geometry; never stretch, squeeze, or distort it.`;
 
-  return `${input.prompt}\n\nReference composition requirement: ${instruction}`;
+  return `${input.prompt}\n\nCanvas aspect-ratio requirement: ${baseInstruction}\nReference composition requirement: ${instruction}`;
 }
 
 function inferDataUrlMimeType(assetUrl: string, fallback: string) {

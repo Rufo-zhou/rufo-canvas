@@ -16,6 +16,7 @@ import {
   ConnectionMode,
   MiniMap,
   ReactFlow,
+  SelectionMode,
   useEdgesState,
   useNodesState,
   type Connection,
@@ -29,6 +30,7 @@ import {
 import {
   ArrowLeft,
   Circle,
+  Copy,
   Download,
   Eye,
   EyeOff,
@@ -112,6 +114,11 @@ type CanvasAspectRatio = NonNullable<GeneratedCanvasMedia["aspectRatio"]>;
 type CanvasHistoryEntry = {
   nodes: CanvasNode[];
   edges: CanvasEdge[];
+};
+
+type CanvasNodePosition = {
+  x: number;
+  y: number;
 };
 
 const nodeTypes = {
@@ -1023,6 +1030,10 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
   }, [nodes, redo, undo, duplicateNode]);
 
   const mediaNodes = nodes.filter((node) => node.data.kind === "asset");
+  const selectedNodes = nodes.filter((node) => node.selected);
+  const selectedGroupNodes = selectedNodes.filter((node) =>
+    nodes.some((candidate) => candidate.parentId === node.id)
+  );
   const previewNode = previewNodeId
     ? nodes.find((node) => node.id === previewNodeId)
     : undefined;
@@ -1038,6 +1049,203 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
   };
   const canUndo = historyAvailability.undo > 0;
   const canRedo = historyAvailability.redo > 0;
+
+  function deleteSelectedNodes() {
+    const selectedIds = collectSelectedNodeIds(nodesRef.current);
+    if (!selectedIds.size) {
+      return;
+    }
+
+    recordHistory();
+    setNodes((current) => {
+      const next = current.filter((node) => !selectedIds.has(node.id));
+      nodesRef.current = next;
+      return next;
+    });
+    setEdges((current) => {
+      const next = current.filter(
+        (edge) => !selectedIds.has(edge.source) && !selectedIds.has(edge.target)
+      );
+      edgesRef.current = next;
+      return next;
+    });
+  }
+
+  function duplicateSelectedNodes() {
+    const sourceNodes = collectSelectedNodes(nodesRef.current);
+    if (!sourceNodes.length) {
+      return;
+    }
+
+    recordHistory();
+    const selectedIds = new Set(sourceNodes.map((node) => node.id));
+    const idMap = new Map(
+      sourceNodes.map((node) => [node.id, `${node.data.kind}-${crypto.randomUUID()}`])
+    );
+    const duplicates = sourceNodes.map((node) => {
+      const parentId =
+        typeof node.parentId === "string" ? node.parentId : undefined;
+      const parentIsDuplicated =
+        typeof parentId === "string" && idMap.has(parentId);
+      const nextParentId =
+        parentIsDuplicated && parentId ? idMap.get(parentId) : node.parentId;
+
+      return {
+        ...structuredClone(node),
+        id: idMap.get(node.id)!,
+        parentId: nextParentId,
+        position: {
+          x: parentIsDuplicated ? node.position.x : node.position.x + 44,
+          y: parentIsDuplicated ? node.position.y : node.position.y + 44
+        },
+        selected: true,
+        data: {
+          ...structuredClone(node.data),
+          label: `${node.data.label} 副本`
+        }
+      };
+    });
+    const duplicateEdges = edgesRef.current
+      .filter((edge) => selectedIds.has(edge.source) && selectedIds.has(edge.target))
+      .map((edge) => ({
+        ...structuredClone(edge),
+        id: `edge-${crypto.randomUUID()}`,
+        source: idMap.get(edge.source) ?? edge.source,
+        target: idMap.get(edge.target) ?? edge.target
+      }));
+
+    setNodes((current) => {
+      const next = [
+        ...current.map((node) => ({ ...node, selected: false })),
+        ...duplicates
+      ];
+      nodesRef.current = next;
+      return next;
+    });
+    setEdges((current) => {
+      const next = [...current, ...duplicateEdges];
+      edgesRef.current = next;
+      return next;
+    });
+  }
+
+  function groupSelectedNodes() {
+    const sourceNodes = nodesRef.current.filter(
+      (node) => node.selected && !node.hidden
+    );
+
+    if (sourceNodes.length < 2) {
+      setStatus("请先框选至少两个节点再打组");
+      return;
+    }
+
+    const bounds = getNodesAbsoluteBounds(sourceNodes, nodesRef.current);
+    if (!bounds) {
+      return;
+    }
+
+    recordHistory();
+    const padding = 36;
+    const groupId = `group-${crypto.randomUUID()}`;
+    const groupPosition = {
+      x: bounds.x - padding,
+      y: bounds.y - padding
+    };
+    const selectedIds = new Set(sourceNodes.map((node) => node.id));
+    const groupNode: CanvasNode = {
+      id: groupId,
+      type: "canvasElement",
+      position: groupPosition,
+      style: {
+        width: Math.round(bounds.width + padding * 2),
+        height: Math.round(bounds.height + padding * 2),
+        zIndex: -1
+      },
+      data: {
+        kind: "frame",
+        label: `分组 ${sourceNodes.length} 项`
+      },
+      selected: true
+    };
+
+    setNodes((current) => {
+      const nextChildren = current.map((node) => {
+        if (!selectedIds.has(node.id)) {
+          return { ...node, selected: false };
+        }
+
+        const absolutePosition = getNodeAbsolutePosition(node, current);
+        return {
+          ...node,
+          parentId: groupId,
+          extent: "parent" as const,
+          position: {
+            x: Math.round(absolutePosition.x - groupPosition.x),
+            y: Math.round(absolutePosition.y - groupPosition.y)
+          },
+          selected: false
+        };
+      });
+      const next = [groupNode, ...nextChildren];
+      nodesRef.current = next;
+      return next;
+    });
+    setStatus(`已打组 ${sourceNodes.length} 个节点`);
+  }
+
+  function ungroupSelectedNodes() {
+    const currentNodes = nodesRef.current;
+    const groupIds = new Set(
+      currentNodes
+        .filter(
+          (node) =>
+            node.selected &&
+            currentNodes.some((candidate) => candidate.parentId === node.id)
+        )
+        .map((node) => node.id)
+    );
+
+    if (!groupIds.size) {
+      setStatus("请先选中一个分组画框");
+      return;
+    }
+
+    recordHistory();
+    const groupsById = new Map(
+      currentNodes
+        .filter((node) => groupIds.has(node.id))
+        .map((node) => [node.id, node])
+    );
+
+    setNodes((current) => {
+      const next = current.flatMap((node) => {
+        if (groupIds.has(node.id)) {
+          return [];
+        }
+
+        if (typeof node.parentId === "string" && groupIds.has(node.parentId)) {
+          const parent = groupsById.get(node.parentId);
+          return [
+            {
+              ...node,
+              parentId: undefined,
+              extent: undefined,
+              position: {
+                x: Math.round((parent?.position.x ?? 0) + node.position.x),
+                y: Math.round((parent?.position.y ?? 0) + node.position.y)
+              },
+              selected: true
+            }
+          ];
+        }
+
+        return [node];
+      });
+      nodesRef.current = next;
+      return next;
+    });
+    setStatus("已取消打组");
+  }
 
   return (
     <div
@@ -1105,10 +1313,15 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
               onConnect={handleConnect}
               onConnectEnd={handleConnectEnd}
               connectionMode={ConnectionMode.Loose}
+              connectionRadius={52}
+              connectionDragThreshold={2}
               connectOnClick
               edgesReconnectable
+              selectionMode={SelectionMode.Partial}
               onNodeDragStart={captureTransformStart}
               onNodeDragStop={finishTransform}
+              onSelectionDragStart={captureTransformStart}
+              onSelectionDragStop={finishTransform}
               onBeforeDelete={async () => {
                 recordHistory();
                 return true;
@@ -1124,7 +1337,10 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
               minZoom={0.1}
               maxZoom={3}
               deleteKeyCode={["Backspace", "Delete"]}
-              panOnDrag={activeTool === "select"}
+              panOnDrag={activeTool === "select" ? [1, 2] : false}
+              panActivationKeyCode="Space"
+              selectionKeyCode={null}
+              multiSelectionKeyCode={["Meta", "Control", "Shift"]}
               nodesDraggable={activeTool === "select"}
               selectionOnDrag={activeTool === "select"}
               defaultEdgeOptions={{
@@ -1175,6 +1391,18 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
               </svg>
             ) : null}
           </div>
+        ) : null}
+
+        {selectedNodes.length ? (
+          <SelectionActionBar
+            selectedCount={selectedNodes.length}
+            canGroup={selectedNodes.length >= 2}
+            canUngroup={selectedGroupNodes.length > 0}
+            onDuplicate={duplicateSelectedNodes}
+            onGroup={groupSelectedNodes}
+            onUngroup={ungroupSelectedNodes}
+            onDelete={deleteSelectedNodes}
+          />
         ) : null}
 
         <div className="absolute bottom-4 left-4 z-30 flex items-center gap-2 text-slate-500">
@@ -1376,6 +1604,70 @@ function CanvasPanel({
           <p className="px-2 py-6 text-center text-xs text-slate-400">暂无内容</p>
         )}
       </div>
+    </div>
+  );
+}
+
+function SelectionActionBar({
+  selectedCount,
+  canGroup,
+  canUngroup,
+  onDuplicate,
+  onGroup,
+  onUngroup,
+  onDelete
+}: {
+  selectedCount: number;
+  canGroup: boolean;
+  canUngroup: boolean;
+  onDuplicate: () => void;
+  onGroup: () => void;
+  onUngroup: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <div className="absolute left-1/2 top-16 z-40 flex -translate-x-1/2 items-center gap-1 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl shadow-slate-200/80">
+      <span className="px-2 text-xs font-semibold text-slate-600">
+        已选 {selectedCount} 项
+      </span>
+      <button
+        type="button"
+        title="复制选中内容"
+        onClick={onDuplicate}
+        className="inline-flex h-8 items-center gap-1 rounded-md px-2 text-xs font-semibold text-slate-600 hover:bg-slate-100"
+      >
+        <Copy className="h-3.5 w-3.5" aria-hidden="true" />
+        复制
+      </button>
+      <button
+        type="button"
+        title="打组"
+        disabled={!canGroup}
+        onClick={onGroup}
+        className="inline-flex h-8 items-center gap-1 rounded-md px-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-35"
+      >
+        <Layers className="h-3.5 w-3.5" aria-hidden="true" />
+        打组
+      </button>
+      <button
+        type="button"
+        title="取消打组"
+        disabled={!canUngroup}
+        onClick={onUngroup}
+        className="inline-flex h-8 items-center gap-1 rounded-md px-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-35"
+      >
+        <Square className="h-3.5 w-3.5" aria-hidden="true" />
+        取消打组
+      </button>
+      <button
+        type="button"
+        title="删除选中内容"
+        onClick={onDelete}
+        className="inline-flex h-8 items-center gap-1 rounded-md px-2 text-xs font-semibold text-red-600 hover:bg-red-50"
+      >
+        <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+        删除
+      </button>
     </div>
   );
 }
@@ -1659,14 +1951,14 @@ function getCanvasMediaSize(
   mediaType: GeneratedCanvasMedia["mediaType"],
   aspectRatio?: GeneratedCanvasMedia["aspectRatio"]
 ) {
+  const selectedRatio = readAspectRatioValue(aspectRatio);
+  const naturalRatio =
+    naturalWidth > 0 && naturalHeight > 0 ? naturalWidth / naturalHeight : null;
   const ratio =
-    naturalWidth > 0 && naturalHeight > 0
-      ? naturalWidth / naturalHeight
-      : readAspectRatioValue(aspectRatio) ??
-        (mediaType === "video" ? 16 / 9 : 1);
+    selectedRatio ?? naturalRatio ?? (mediaType === "video" ? 16 / 9 : 1);
   const maxWidth = mediaType === "video" ? 560 : 520;
   const maxHeight = mediaType === "video" ? 420 : 520;
-  let width = Math.min(naturalWidth, maxWidth);
+  let width = Math.min(naturalWidth > 0 ? naturalWidth : maxWidth, maxWidth);
   let height = width / ratio;
 
   if (height > maxHeight) {
@@ -1677,6 +1969,95 @@ function getCanvasMediaSize(
   return {
     width: Math.round(Math.max(width, 180)),
     height: Math.round(Math.max(height, 120))
+  };
+}
+
+function collectSelectedNodeIds(nodes: CanvasNode[]) {
+  const selectedIds = new Set(
+    nodes.filter((node) => node.selected).map((node) => node.id)
+  );
+  let expanded = true;
+
+  while (expanded) {
+    expanded = false;
+    for (const node of nodes) {
+      if (
+        typeof node.parentId === "string" &&
+        selectedIds.has(node.parentId) &&
+        !selectedIds.has(node.id)
+      ) {
+        selectedIds.add(node.id);
+        expanded = true;
+      }
+    }
+  }
+
+  return selectedIds;
+}
+
+function collectSelectedNodes(nodes: CanvasNode[]) {
+  const selectedIds = collectSelectedNodeIds(nodes);
+  return nodes.filter((node) => selectedIds.has(node.id));
+}
+
+function getNodesAbsoluteBounds(
+  nodes: CanvasNode[],
+  allNodes: CanvasNode[]
+) {
+  const boxes = nodes
+    .map((node) => {
+      const position = getNodeAbsolutePosition(node, allNodes);
+      const size = readCanvasNodeSize(node);
+
+      if (!size) {
+        return null;
+      }
+
+      return {
+        x: position.x,
+        y: position.y,
+        width: size.width,
+        height: size.height
+      };
+    })
+    .filter((box): box is { x: number; y: number; width: number; height: number } =>
+      Boolean(box)
+    );
+
+  if (!boxes.length) {
+    return null;
+  }
+
+  const minX = Math.min(...boxes.map((box) => box.x));
+  const minY = Math.min(...boxes.map((box) => box.y));
+  const maxX = Math.max(...boxes.map((box) => box.x + box.width));
+  const maxY = Math.max(...boxes.map((box) => box.y + box.height));
+
+  return {
+    x: minX,
+    y: minY,
+    width: maxX - minX,
+    height: maxY - minY
+  };
+}
+
+function getNodeAbsolutePosition(
+  node: CanvasNode,
+  allNodes: CanvasNode[]
+): CanvasNodePosition {
+  if (typeof node.parentId !== "string") {
+    return node.position;
+  }
+
+  const parent = allNodes.find((candidate) => candidate.id === node.parentId);
+  if (!parent) {
+    return node.position;
+  }
+
+  const parentPosition = getNodeAbsolutePosition(parent, allNodes);
+  return {
+    x: parentPosition.x + node.position.x,
+    y: parentPosition.y + node.position.y
   };
 }
 

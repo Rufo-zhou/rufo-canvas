@@ -12,6 +12,7 @@ import {
 } from "react";
 import {
   ArrowUp,
+  BookOpen,
   CalendarDays,
   ChevronRight,
   Clock3,
@@ -38,6 +39,7 @@ import {
   type LucideIcon
 } from "lucide-react";
 import { AuthGate } from "@/components/auth/AuthGate";
+import { openRufoOnboarding } from "@/components/onboarding/RufoOnboarding";
 import {
   usePreferences,
   type RufoLanguage,
@@ -1175,7 +1177,18 @@ function ProjectDashboardContent({ mode }: ProjectDashboardProps) {
             <PreferenceControls copy={copy} />
             <button
               type="button"
-              onClick={() => promptRef.current?.focus()}
+              onClick={openRufoOnboarding}
+              className="hidden h-9 items-center gap-2 rounded-full border border-[color:var(--rufo-home-border)] bg-[color:var(--rufo-home-pill)] px-3 text-sm font-semibold text-[color:var(--rufo-home-muted)] transition hover:bg-[color:var(--rufo-home-card-hover)] hover:text-[color:var(--rufo-home-fg)] md:inline-flex"
+            >
+              <BookOpen className="h-4 w-4" aria-hidden="true" />
+              教程
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                applyQuickPrompt(copy.quickPrompts[0]?.prompt ?? "");
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
               className="hidden h-9 rounded-full bg-sky-500 px-4 text-sm font-semibold text-white shadow-lg shadow-sky-500/25 transition hover:bg-sky-400 sm:inline-flex sm:items-center"
             >
               {copy.nav.freeTrial}

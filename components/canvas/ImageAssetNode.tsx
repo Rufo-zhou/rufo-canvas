@@ -132,11 +132,11 @@ export function ImageAssetNode({ id, data, selected }: NodeProps<CanvasNode>) {
         </div>
       ) : null}
 
-      <div className="h-full w-full overflow-hidden">
+      <div className="h-full w-full overflow-hidden bg-slate-950/5">
         {assetUrl && mediaType === "video" ? (
           <video
             src={assetUrl}
-            className="nodrag nowheel h-full w-full object-cover"
+            className="nodrag nowheel h-full w-full object-contain"
             controls
             loop
             playsInline
@@ -147,7 +147,7 @@ export function ImageAssetNode({ id, data, selected }: NodeProps<CanvasNode>) {
           <img
             src={assetUrl}
             alt={data.label}
-            className="h-full w-full object-cover"
+            className="h-full w-full object-contain"
             draggable={false}
           />
         ) : (

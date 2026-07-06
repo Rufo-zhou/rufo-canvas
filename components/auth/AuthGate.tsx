@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { Loader2 } from "lucide-react";
+import { RufoOnboarding } from "@/components/onboarding/RufoOnboarding";
 import { AuthPanel } from "./AuthPanel";
 import { useAuth } from "./AuthProvider";
 
@@ -45,5 +46,10 @@ export function AuthGate({ children }: AuthGateProps) {
     return <AuthPanel />;
   }
 
-  return children;
+  return (
+    <>
+      {children}
+      <RufoOnboarding />
+    </>
+  );
 }

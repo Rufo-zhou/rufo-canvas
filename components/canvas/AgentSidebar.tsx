@@ -497,7 +497,16 @@ export function AgentSidebar({
           progress: 100,
           statusLabel: "生成完成"
         });
-        onGenerated(generated, clientTaskId);
+        onGenerated(
+          {
+            ...generated,
+            aspectRatio,
+            quality,
+            width: dimensions.width,
+            height: dimensions.height
+          },
+          clientTaskId
+        );
         setReferenceFiles([]);
         setCanvasReferences([]);
         setDraftNodeId(undefined);
@@ -599,7 +608,16 @@ export function AgentSidebar({
         progress: 100,
         statusLabel: "生成完成"
       });
-      onGenerated(payload.data.asset, clientTaskId);
+      onGenerated(
+        {
+          ...payload.data.asset,
+          aspectRatio: payload.data.asset.aspectRatio ?? aspectRatio,
+          quality: payload.data.asset.quality ?? quality,
+          width: payload.data.asset.width ?? width,
+          height: payload.data.asset.height ?? height
+        },
+        clientTaskId
+      );
       setReferenceFiles([]);
       setCanvasReferences([]);
       setDraftNodeId(undefined);
@@ -1233,7 +1251,7 @@ function GenerationHistoryView({
                   {record.media.mediaType === "video" ? (
                     <video
                       src={record.media.assetUrl}
-                      className="h-full w-full object-cover"
+                      className="h-full w-full object-contain"
                       muted
                       preload="metadata"
                     />
@@ -1242,7 +1260,7 @@ function GenerationHistoryView({
                     <img
                       src={record.media.assetUrl}
                       alt={record.task.prompt}
-                      className="h-full w-full object-cover"
+                      className="h-full w-full object-contain"
                     />
                   )}
                 </div>

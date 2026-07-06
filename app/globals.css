@@ -123,14 +123,18 @@ select {
 
 @media (prefers-reduced-motion: reduce) {
   .rufo-home-fade-in,
-  .rufo-float-label {
+  .rufo-float-label,
+  .rufo-generation-scan,
+  .rufo-generation-orbit,
+  .rufo-generation-dot,
+  .rufo-generation-pulse {
     animation: none;
   }
 }
 
 .rufo-flow-handle {
-  width: 44px !important;
-  height: 44px !important;
+  width: 64px !important;
+  height: 64px !important;
   border: 0 !important;
   background: transparent !important;
   z-index: 30 !important;
@@ -154,8 +158,82 @@ select {
     transform 140ms ease;
 }
 
+.rufo-flow-handle::before {
+  position: absolute;
+  inset: 8px;
+  content: "";
+  border-radius: 9999px;
+  background: rgb(14 165 233 / 0.08);
+  opacity: 0;
+  transition: opacity 140ms ease;
+}
+
 .group:hover .rufo-flow-handle-muted::after,
 .rufo-flow-handle-visible::after {
   opacity: 1;
   transform: translate(-50%, -50%) scale(1);
+}
+
+.group:hover .rufo-flow-handle-muted::before,
+.rufo-flow-handle-visible::before {
+  opacity: 1;
+}
+
+.rufo-generation-scan {
+  animation: rufoGenerationScan 1.7s ease-in-out infinite;
+}
+
+.rufo-generation-orbit {
+  animation: rufoGenerationOrbit 2.6s linear infinite;
+}
+
+.rufo-generation-dot {
+  animation: rufoGenerationDot 2.6s linear infinite;
+}
+
+.rufo-generation-pulse {
+  animation: rufoGenerationPulse 900ms ease-in-out infinite;
+}
+
+@keyframes rufoGenerationScan {
+  from {
+    transform: translateX(-220%) skewX(-14deg);
+  }
+
+  to {
+    transform: translateX(220%) skewX(-14deg);
+  }
+}
+
+@keyframes rufoGenerationOrbit {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes rufoGenerationDot {
+  from {
+    transform: rotate(0deg) translateX(29px) rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg) translateX(29px) rotate(-360deg);
+  }
+}
+
+@keyframes rufoGenerationPulse {
+  0%,
+  100% {
+    opacity: 0.28;
+    transform: translateY(0);
+  }
+
+  50% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
 }

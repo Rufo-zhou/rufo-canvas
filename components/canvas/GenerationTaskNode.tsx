@@ -5,7 +5,6 @@ import {
   CircleAlert,
   Film,
   ImageIcon,
-  Loader2,
   RotateCcw,
   Sparkles
 } from "lucide-react";
@@ -76,9 +75,25 @@ export function GenerationTaskNode({ id, data, selected }: NodeProps<CanvasNode>
               配置生成
             </button>
           ) : (
-            <div className="text-center text-slate-700">
-              <Loader2 className="mx-auto h-7 w-7 animate-spin text-slate-900" aria-hidden="true" />
-              <p className="mt-2 text-xs font-semibold">{Math.round(progress)}%</p>
+            <div className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden text-center text-slate-700">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(14,165,233,0.22),transparent_36%),linear-gradient(135deg,rgba(15,23,42,0.08),transparent_42%,rgba(15,23,42,0.08))]" />
+              <div className="rufo-generation-scan absolute inset-y-0 w-1/3 bg-gradient-to-r from-transparent via-white/75 to-transparent" />
+              <div className="relative flex h-16 w-16 items-center justify-center">
+                <span className="rufo-generation-orbit absolute h-14 w-14 rounded-full border border-slate-900/10" />
+                <span className="rufo-generation-dot absolute h-2.5 w-2.5 rounded-full bg-cyan-500 shadow-lg shadow-cyan-400/50" />
+                <Sparkles className="h-6 w-6 text-slate-950" aria-hidden="true" />
+              </div>
+              <p className="relative mt-3 text-xs font-semibold">
+                {data.statusLabel ?? "模型正在生成"}
+              </p>
+              <p className="relative mt-1 text-[11px] text-slate-500">
+                {Math.round(progress)}%
+              </p>
+              <div className="relative mt-3 flex gap-1.5">
+                <span className="rufo-generation-pulse h-1.5 w-1.5 rounded-full bg-slate-900" />
+                <span className="rufo-generation-pulse h-1.5 w-1.5 rounded-full bg-slate-900 [animation-delay:140ms]" />
+                <span className="rufo-generation-pulse h-1.5 w-1.5 rounded-full bg-slate-900 [animation-delay:280ms]" />
+              </div>
             </div>
           )}
         </div>
