@@ -79,6 +79,28 @@ export async function createProject(supabase: SupabaseAppClient, input: CreatePr
   return data;
 }
 
+export async function updateProjectName(
+  supabase: SupabaseAppClient,
+  projectId: string,
+  name: string
+) {
+  const { data, error } = await supabase
+    .from("projects")
+    .update({
+      name,
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", projectId)
+    .select()
+    .single();
+
+  if (error) {
+    throw new Error(`Failed to rename project: ${error.message}`);
+  }
+
+  return data;
+}
+
 export async function deleteProject(supabase: SupabaseAppClient, projectId: string) {
   const { error } = await supabase.from("projects").delete().eq("id", projectId);
 

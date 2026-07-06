@@ -73,6 +73,7 @@ export type AgentSidebarProps = {
   projectId: string;
   initialPrompt?: string;
   focusRequest?: number;
+  settingsRequest?: number;
   referenceRequest?: CanvasReferenceRequest | null;
   retryRequest?: CanvasGenerationRequest | null;
   onGenerationStart: (request: CanvasGenerationRequest) => void;
@@ -117,6 +118,17 @@ type GenerationHistoryRecord = {
   error?: GenerationErrorInfo;
 };
 
+type SkillPreset = {
+  label: string;
+  description: string;
+  mediaType: MediaType;
+  prompt: string;
+  aspectRatio: MediaAspectRatio;
+  quality: MediaQuality;
+  referenceMode?: MediaReferenceMode;
+  preferredModelIds: string[];
+};
+
 const fallbackModels: ModelOption[] = [
   {
     id: "sana-free",
@@ -134,10 +146,71 @@ const fallbackModels: ModelOption[] = [
   }
 ];
 
+const skillPresets: SkillPreset[] = [
+  {
+    label: "电商产品主图",
+    description: "适合白底、场景海报、详情图和社媒封面",
+    mediaType: "image",
+    prompt: "为一款高端消费品生成电商产品主图，主体清晰，背景干净，包含专业布光、真实材质、可商用构图和高转化视觉层次。",
+    aspectRatio: "1:1",
+    quality: "high",
+    preferredModelIds: ["sana-free", "gptimage", "nano-banana", "agnes-image-2.0"]
+  },
+  {
+    label: "Logo 设计",
+    description: "适合品牌符号、字体标识和应用预览",
+    mediaType: "image",
+    prompt: "设计一个原创品牌 Logo，要求图形简洁、可识别、适合数字产品和社交头像，输出干净背景、清晰边缘和品牌应用感。",
+    aspectRatio: "1:1",
+    quality: "high",
+    preferredModelIds: ["ideogram-v4-turbo", "gptimage", "sana-free"]
+  },
+  {
+    label: "角色设定图",
+    description: "适合人物三视图、服装和表情延展",
+    mediaType: "image",
+    prompt: "创建一个原创写实角色设定图，包含统一身份特征、服装细节、正面半身构图、可继续用于视频生成的一致性描述。",
+    aspectRatio: "3:4",
+    quality: "high",
+    preferredModelIds: ["seedream", "nano-banana", "sana-free"]
+  },
+  {
+    label: "电影感运镜",
+    description: "适合短片镜头、产品转场和氛围画面",
+    mediaType: "video",
+    prompt: "生成一段电影感短视频：主体稳定，镜头缓慢推进，柔和侧逆光，浅景深，质感真实，动作自然，适合作为品牌短片片段。",
+    aspectRatio: "16:9",
+    quality: "high",
+    referenceMode: "none",
+    preferredModelIds: ["agnes-video-2.0", "seedance-2", "veo", "wan-pro"]
+  },
+  {
+    label: "首尾帧动画",
+    description: "适合从参考图延展运动或转场",
+    mediaType: "video",
+    prompt: "根据首尾帧生成平滑转场视频，保持主体身份一致，镜头运动自然，避免形变和闪烁，画面具有广告级光影质感。",
+    aspectRatio: "16:9",
+    quality: "high",
+    referenceMode: "start-end",
+    preferredModelIds: ["agnes-video-2.0", "seedance-2", "wan-pro"]
+  },
+  {
+    label: "社交媒体短片",
+    description: "适合竖屏种草、广告和发布预告",
+    mediaType: "video",
+    prompt: "生成一支竖屏社交媒体短片，节奏紧凑，主体居中，前三秒有吸引力，适合产品发布、生活方式内容和短视频广告。",
+    aspectRatio: "9:16",
+    quality: "high",
+    referenceMode: "none",
+    preferredModelIds: ["agnes-video-2.0", "seedance-pro", "wan-fast"]
+  }
+];
+
 export function AgentSidebar({
   projectId,
   initialPrompt,
   focusRequest = 0,
+  settingsRequest = 0,
   referenceRequest,
   retryRequest,
   onGenerationStart,
@@ -228,6 +301,13 @@ export function AgentSidebar({
       promptRef.current?.focus();
     }
   }, [focusRequest]);
+
+  useEffect(() => {
+    if (settingsRequest > 0) {
+      setView("create");
+      setSettingsOpen(true);
+    }
+  }, [settingsRequest]);
 
   useEffect(() => {
     setProviderCredentials(loadProviderCredentials().credentials);
@@ -724,6 +804,39 @@ export function AgentSidebar({
     }
   }
 
+  function applySkillPreset(preset: SkillPreset) {
+    const targetModel =
+      effectiveModels.find(
+        (model) =>
+          model.mediaType === preset.mediaType &&
+          preset.preferredModelIds.includes(model.id) &&
+          model.available
+      ) ??
+      effectiveModels.find(
+        (model) =>
+          model.mediaType === preset.mediaType &&
+          preset.preferredModelIds.includes(model.id)
+      ) ??
+      effectiveModels.find(
+        (model) => model.mediaType === preset.mediaType && model.available
+      ) ??
+      effectiveModels.find((model) => model.mediaType === preset.mediaType);
+
+    setMediaType(preset.mediaType);
+    if (targetModel) {
+      setModelId(targetModel.id);
+    }
+    setPrompt(preset.prompt);
+    setAspectRatio(preset.aspectRatio);
+    setQuality(preset.quality);
+    setReferenceMode(preset.referenceMode ?? "none");
+    setReferenceFit("outpaint");
+    setError(null);
+    setErrorSolution(null);
+    setView("create");
+    window.setTimeout(() => promptRef.current?.focus(), 0);
+  }
+
   return (
     <aside className="flex min-h-0 w-[380px] shrink-0 flex-col border-l border-slate-200 bg-white max-lg:absolute max-lg:inset-y-0 max-lg:right-0 max-lg:z-50 max-lg:w-[min(380px,100vw)] max-lg:shadow-2xl">
       <header className="flex h-12 items-center justify-between border-b border-slate-100 px-4">
@@ -782,21 +895,22 @@ export function AgentSidebar({
           </button>
         </div>
 
-        <h3 className="mb-2 text-xs font-semibold text-slate-700">快捷创作</h3>
-        <div className="mb-5 flex flex-wrap gap-2">
-          {[
-            mediaType === "image" ? "电商产品主图" : "电影感运镜",
-            mediaType === "image" ? "Logo 设计" : "首尾帧动画",
-            mediaType === "image" ? "角色设定图" : "社交媒体短片",
-            mediaType === "image" ? "海报排版" : "产品展示视频"
-          ].map((skill) => (
+        <h3 className="mb-2 text-xs font-semibold text-slate-700">快捷 Skills</h3>
+        <div className="mb-5 grid gap-2">
+          {skillPresets
+            .filter((preset) => preset.mediaType === mediaType)
+            .slice(0, 3)
+            .map((preset) => (
             <button
-              key={skill}
+              key={preset.label}
               type="button"
-              onClick={() => setPrompt(skill)}
-              className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
+              onClick={() => applySkillPreset(preset)}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-left text-xs text-slate-700 hover:bg-slate-50"
             >
-              {skill}
+              <span className="block font-semibold">{preset.label}</span>
+              <span className="mt-0.5 block text-[10px] leading-4 text-slate-400">
+                {preset.description}
+              </span>
             </button>
           ))}
         </div>

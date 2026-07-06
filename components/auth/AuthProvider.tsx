@@ -42,9 +42,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const localEmail = window.localStorage.getItem(DEMO_SESSION_KEY);
+    setDemoUser(localEmail ? createDemoUser(localEmail) : null);
+
     if (mode === "demo") {
-      const email = window.localStorage.getItem(DEMO_SESSION_KEY);
-      setDemoUser(email ? createDemoUser(email) : null);
       setSession(null);
       setLoading(false);
       return;
@@ -97,6 +98,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (error) {
         throw new Error(toAuthErrorMessage(error.message));
       }
+
+      window.localStorage.removeItem(DEMO_SESSION_KEY);
+      setDemoUser(null);
     },
     [mode]
   );
@@ -126,6 +130,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
         throw new Error(toAuthErrorMessage(error.message));
       }
 
+      if (data.session) {
+        window.localStorage.removeItem(DEMO_SESSION_KEY);
+        setDemoUser(null);
+      }
+
       return { requiresEmailConfirmation: !data.session };
     },
     [mode]
@@ -138,6 +147,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setDemoUser(createDemoUser(email));
       return;
     }
+
+    window.localStorage.removeItem(DEMO_SESSION_KEY);
+    setDemoUser(null);
 
     const supabase = getSupabaseBrowserClient();
     const { error } = await supabase.auth.signInWithOAuth({
@@ -157,23 +169,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [mode]);
 
   const signInAnonymously = useCallback(async () => {
-    if (mode === "demo") {
-      const email = "guest@rufo.local";
-      window.localStorage.setItem(DEMO_SESSION_KEY, email);
-      setDemoUser(createDemoUser(email));
-      return;
-    }
-
-    const supabase = getSupabaseBrowserClient();
-    const { error } = await supabase.auth.signInAnonymously();
-
-    if (error) {
-      throw new Error(toAuthErrorMessage(error.message));
-    }
-  }, [mode]);
+    const email = "guest@rufo.local";
+    window.localStorage.setItem(DEMO_SESSION_KEY, email);
+    setDemoUser(createDemoUser(email));
+  }, []);
 
   const signOut = useCallback(async () => {
-    if (mode === "demo") {
+    if (mode === "demo" || !session) {
       window.localStorage.removeItem(DEMO_SESSION_KEY);
       setDemoUser(null);
       return;
@@ -185,10 +187,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
     if (error) {
       throw new Error(error.message);
     }
-  }, [mode]);
+
+    window.localStorage.removeItem(DEMO_SESSION_KEY);
+    setDemoUser(null);
+  }, [mode, session]);
 
   const getAccessToken = useCallback(async () => {
-    if (mode === "demo") {
+    if (mode === "demo" || (!session && demoUser)) {
       return "rufo-local-demo";
     }
 
@@ -200,13 +205,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
 
     return data.session.access_token;
-  }, [mode]);
+  }, [demoUser, mode, session]);
 
-  const user = mode === "demo" ? demoUser : session?.user ?? null;
+  const user = session?.user ?? demoUser;
+  const effectiveMode: AppMode = mode === "demo" || (!session && demoUser) ? "demo" : "supabase";
 
   const value = useMemo<AuthContextValue>(
     () => ({
-      mode,
+      mode: effectiveMode,
       session,
       user,
       loading,
@@ -220,9 +226,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }),
     [
       configured,
+      effectiveMode,
       getAccessToken,
       loading,
-      mode,
       session,
       signIn,
       signInAnonymously,

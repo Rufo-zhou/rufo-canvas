@@ -64,6 +64,21 @@ export function ApiSettingsDialog({
     setSaved(false);
   }, [open]);
 
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose, open]);
+
   if (!open) {
     return null;
   }
@@ -84,7 +99,14 @@ export function ApiSettingsDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/35 p-4 backdrop-blur-sm">
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/35 p-4 backdrop-blur-sm"
+      onClick={(event) => {
+        if (event.target === event.currentTarget) {
+          onClose();
+        }
+      }}
+    >
       <div
         role="dialog"
         aria-modal="true"
@@ -98,9 +120,9 @@ export function ApiSettingsDialog({
             </span>
             <div>
               <h2 id="api-settings-title" className="text-sm font-semibold text-slate-900">
-                自助接入 API
+                API 接入设置
               </h2>
-              <p className="text-[11px] text-slate-500">使用你自己的免费额度和模型权限</p>
+              <p className="text-[11px] text-slate-500">自助接入你自己的免费额度和模型权限</p>
             </div>
           </div>
           <button

@@ -53,6 +53,24 @@ export async function deleteLocalProject(projectId: string) {
   window.localStorage.removeItem(`${SNAPSHOT_PREFIX}${projectId}`);
 }
 
+export async function updateLocalProjectName(projectId: string, name: string) {
+  const now = new Date().toISOString();
+  const projects = readProjects();
+  const index = projects.findIndex((project) => project.id === projectId);
+
+  if (index < 0) {
+    throw new Error("项目不存在或已被删除。");
+  }
+
+  projects[index] = {
+    ...projects[index],
+    name,
+    updated_at: now
+  };
+  writeProjects(projects);
+  return projects[index];
+}
+
 export async function loadLocalCanvasSnapshot(projectId: string) {
   const value = window.localStorage.getItem(`${SNAPSHOT_PREFIX}${projectId}`);
 

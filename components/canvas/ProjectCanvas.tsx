@@ -29,13 +29,17 @@ import {
 } from "@xyflow/react";
 import {
   ArrowLeft,
+  Check,
   Circle,
   Copy,
   Download,
+  Edit3,
   Eye,
   EyeOff,
+  FileJson,
   Gift,
   Grid3X3,
+  HelpCircle,
   ImagePlus,
   Layers,
   Loader2,
@@ -48,6 +52,7 @@ import {
   Plus,
   Redo2,
   Save,
+  Share2,
   Square,
   Trash2,
   Type,
@@ -64,7 +69,8 @@ import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
   getLocalProject,
   loadLocalCanvasSnapshot,
-  saveLocalCanvasSnapshot
+  saveLocalCanvasSnapshot,
+  updateLocalProjectName
 } from "@/lib/local/database";
 import {
   createSignedAssetUrl,
@@ -72,6 +78,7 @@ import {
   listProjectAssets,
   loadLatestCanvasSnapshot,
   saveCanvasSnapshot,
+  updateProjectName,
   uploadProjectFile
 } from "@/lib/supabase/database";
 import { AgentSidebar } from "./AgentSidebar";
@@ -121,6 +128,20 @@ type CanvasNodePosition = {
   y: number;
 };
 
+type ModelCatalogItem = {
+  id: string;
+  label: string;
+  provider: string;
+  mediaType: "image" | "video";
+  freeTier?: boolean;
+  requiresKey?: boolean;
+  available?: boolean;
+  aspectRatios?: string[];
+  qualityOptions?: string[];
+  durationOptions?: number[];
+  description?: string;
+};
+
 const nodeTypes = {
   imageAsset: ImageAssetNode,
   canvasElement: CanvasElementNode,
@@ -164,6 +185,8 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
   const futureRef = useRef<CanvasHistoryEntry[]>([]);
   const historySnapshotRef = useRef<CanvasHistoryEntry | null>(null);
   const [projectName, setProjectName] = useState("Rufo");
+  const [draftProjectName, setDraftProjectName] = useState("Rufo");
+  const [renamingProject, setRenamingProject] = useState(false);
   const [nodes, setNodes, onNodesChange] = useNodesState<CanvasNode>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<CanvasEdge>([]);
   const [flow, setFlow] = useState<ReactFlowInstance<CanvasNode, CanvasEdge> | null>(null);
@@ -177,6 +200,7 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
   const [gridVisible, setGridVisible] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [sidebarFocusRequest, setSidebarFocusRequest] = useState(0);
+  const [sidebarSettingsRequest, setSidebarSettingsRequest] = useState(0);
   const [floatingPanel, setFloatingPanel] = useState<FloatingPanel>(null);
   const [miniMapVisible, setMiniMapVisible] = useState(false);
   const [drawingPoints, setDrawingPoints] = useState<Array<{ x: number; y: number }>>([]);
@@ -185,6 +209,9 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
   const [previewNodeId, setPreviewNodeId] = useState<string | null>(null);
   const [retryRequest, setRetryRequest] =
     useState<CanvasGenerationRequest | null>(null);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [helpDialogOpen, setHelpDialogOpen] = useState(false);
+  const [modelStatusOpen, setModelStatusOpen] = useState(false);
   const [historyAvailability, setHistoryAvailability] = useState({
     undo: 0,
     redo: 0
@@ -350,6 +377,7 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
         }
 
         setProjectName(project.name);
+        setDraftProjectName(project.name);
 
         if (snapshot) {
           const restoredNodes =
@@ -466,6 +494,66 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
       setError(caughtError instanceof Error ? caughtError.message : "保存失败。");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleRenameProject() {
+    if (!user) {
+      return;
+    }
+
+    const nextName = draftProjectName.trim() || "Rufo";
+    if (nextName === projectName) {
+      return;
+    }
+
+    setError(null);
+
+    try {
+      if (appMode === "demo") {
+        await updateLocalProjectName(projectId, nextName);
+      } else {
+        await updateProjectName(requireSupabase(supabase), projectId, nextName);
+      }
+      setProjectName(nextName);
+      setDraftProjectName(nextName);
+      setStatus("项目名称已更新");
+    } catch (caughtError) {
+      setDraftProjectName(projectName);
+      setError(caughtError instanceof Error ? caughtError.message : "项目重命名失败。");
+    }
+  }
+
+  function handleExportCanvas() {
+    const snapshot: CanvasSnapshot = {
+      schemaVersion: 1,
+      nodes: prepareCanvasNodesForSnapshot(nodesRef.current),
+      edges: edgesRef.current,
+      viewport: flow?.getViewport() ?? viewport,
+      updatedAt: new Date().toISOString()
+    };
+    const blob = new Blob([JSON.stringify(snapshot, null, 2)], {
+      type: "application/json"
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${safeFilename(projectName)}-canvas.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    setStatus("画布 JSON 已导出");
+  }
+
+  async function handleCopyProjectLink() {
+    try {
+      await copyTextToClipboard(window.location.href);
+      setStatus("项目链接已复制");
+      return true;
+    } catch {
+      setError("项目链接复制失败，请手动复制浏览器地址栏链接。");
+      return false;
     }
   }
 
@@ -1269,7 +1357,37 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
             <Link href="/projects" title="返回项目" className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-950 text-white shadow-sm">
               <ArrowLeft className="h-4 w-4" aria-hidden="true" />
             </Link>
-            <span className="text-sm font-semibold text-slate-800">{projectName}</span>
+            <form
+              onSubmit={(event) => {
+                event.preventDefault();
+                event.currentTarget.querySelector("input")?.blur();
+              }}
+              className="pointer-events-auto flex items-center gap-1"
+            >
+              <input
+                value={draftProjectName}
+                onChange={(event) => setDraftProjectName(event.target.value)}
+                onFocus={() => setRenamingProject(true)}
+                onBlur={() => {
+                  setRenamingProject(false);
+                  void handleRenameProject();
+                }}
+                className="h-8 w-44 rounded-md border border-transparent bg-transparent px-2 text-sm font-semibold text-slate-800 outline-none hover:border-slate-200 hover:bg-white focus:border-slate-300 focus:bg-white"
+                aria-label="项目名称"
+                title="编辑项目名称"
+              />
+              {renamingProject ? (
+                <button
+                  type="submit"
+                  title="保存项目名称"
+                  className="flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-white"
+                >
+                  <Check className="h-4 w-4" aria-hidden="true" />
+                </button>
+              ) : (
+                <Edit3 className="h-3.5 w-3.5 text-slate-400" aria-hidden="true" />
+              )}
+            </form>
             <button
               type="button"
               onClick={() => void handleSave()}
@@ -1285,11 +1403,35 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
           </div>
 
           <div className="pointer-events-auto flex items-center gap-3 text-xs font-medium text-slate-500">
+            <button
+              type="button"
+              title="画布帮助"
+              onClick={() => setHelpDialogOpen(true)}
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50"
+            >
+              <HelpCircle className="h-4 w-4" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              title="分享项目"
+              onClick={() => setShareDialogOpen(true)}
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50"
+            >
+              <Share2 className="h-4 w-4" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              title="导出画布 JSON"
+              onClick={handleExportCanvas}
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50"
+            >
+              <FileJson className="h-4 w-4" aria-hidden="true" />
+            </button>
             <span className="inline-flex items-center gap-1" title="模型接入状态">
               <Zap className="h-3.5 w-3.5 fill-lime-400 text-lime-500" aria-hidden="true" />
               多模型
             </span>
-            <button type="button" title="模型与额度" onClick={() => setSidebarOpen(true)} className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 text-white shadow-sm">
+            <button type="button" title="模型与额度" onClick={() => setModelStatusOpen(true)} className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 text-white shadow-sm">
               <Gift className="h-4 w-4" aria-hidden="true" />
             </button>
             <UserMenu />
@@ -1522,6 +1664,7 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
           projectId={projectId}
           initialPrompt={initialPrompt}
           focusRequest={sidebarFocusRequest}
+          settingsRequest={sidebarSettingsRequest}
           referenceRequest={referenceRequest}
           retryRequest={retryRequest}
           onGenerationStart={handleGenerationStart}
@@ -1545,6 +1688,30 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
           node={previewNode}
           onClose={() => setPreviewNodeId(null)}
           onRename={(name) => renameNode(previewNode.id, name)}
+        />
+      ) : null}
+
+      {shareDialogOpen ? (
+        <ShareCanvasDialog
+          projectName={projectName}
+          onClose={() => setShareDialogOpen(false)}
+          onCopyLink={handleCopyProjectLink}
+          onExport={handleExportCanvas}
+        />
+      ) : null}
+
+      {helpDialogOpen ? (
+        <CanvasHelpDialog onClose={() => setHelpDialogOpen(false)} />
+      ) : null}
+
+      {modelStatusOpen ? (
+        <ModelStatusDialog
+          onClose={() => setModelStatusOpen(false)}
+          onOpenAgent={() => {
+            setModelStatusOpen(false);
+            setSidebarOpen(true);
+            setSidebarSettingsRequest((current) => current + 1);
+          }}
         />
       ) : null}
     </div>
@@ -1668,6 +1835,249 @@ function SelectionActionBar({
         <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
         删除
       </button>
+    </div>
+  );
+}
+
+function useCloseOnEscape(onClose: () => void) {
+  useEffect(() => {
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        onClose();
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+}
+
+function ShareCanvasDialog({
+  projectName,
+  onClose,
+  onCopyLink,
+  onExport
+}: {
+  projectName: string;
+  onClose: () => void;
+  onCopyLink: () => Promise<boolean>;
+  onExport: () => void;
+}) {
+  const [copyState, setCopyState] = useState<"idle" | "success" | "error">("idle");
+
+  useCloseOnEscape(onClose);
+
+  async function handleCopyLink() {
+    const copied = await onCopyLink();
+    setCopyState(copied ? "success" : "error");
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm"
+      onClick={(event) => {
+        if (event.target === event.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <section className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-5 shadow-2xl">
+        <header className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-base font-semibold text-slate-950">分享与导出</h2>
+            <p className="mt-1 text-xs leading-5 text-slate-500">
+              {projectName} 的链接可复制给有权限的用户，画布 JSON 可用于备份或迁移。
+            </p>
+          </div>
+          <button type="button" title="关闭" onClick={onClose} className="rounded-md p-1 text-slate-400 hover:bg-slate-100">
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </header>
+        <div className="mt-5 grid gap-2">
+          <button
+            type="button"
+            onClick={() => void handleCopyLink()}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white hover:bg-slate-800"
+          >
+            <Share2 className="h-4 w-4" aria-hidden="true" />
+            复制项目链接
+          </button>
+          {copyState === "success" ? (
+            <p className="rounded-lg bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700">
+              已复制项目链接。
+            </p>
+          ) : copyState === "error" ? (
+            <p className="rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-700">
+              复制失败，请手动复制浏览器地址栏链接。
+            </p>
+          ) : null}
+          <button
+            type="button"
+            onClick={onExport}
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-slate-200 px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            <FileJson className="h-4 w-4" aria-hidden="true" />
+            导出画布 JSON
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function CanvasHelpDialog({ onClose }: { onClose: () => void }) {
+  useCloseOnEscape(onClose);
+
+  const items = [
+    ["框选多个节点", "在画布空白处拖拽，选中后可复制、删除、打组或取消打组。"],
+    ["移动画布", "按住空格拖拽，或使用鼠标中键/右键拖动画布。"],
+    ["继续生成", "选中图片或视频后点击闪光按钮，或从节点两侧拖出连接线。"],
+    ["上传素材", "底部上传按钮支持图片和视频，上传后会作为可拖动节点。"],
+    ["历史记录", "右侧 Agent 顶部时钟按钮可查看生成历史和失败原因。"],
+    ["快捷键", "Delete 删除，⌘/Ctrl+Z 撤销，Shift+⌘/Ctrl+Z 重做，⌘/Ctrl+D 复制。"]
+  ];
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm"
+      onClick={(event) => {
+        if (event.target === event.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <section className="w-full max-w-2xl rounded-xl border border-slate-200 bg-white p-5 shadow-2xl">
+        <header className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-base font-semibold text-slate-950">画布操作帮助</h2>
+            <p className="mt-1 text-xs leading-5 text-slate-500">
+              这些操作都已经接入当前 Rufo 画布，不是静态说明。
+            </p>
+          </div>
+          <button type="button" title="关闭" onClick={onClose} className="rounded-md p-1 text-slate-400 hover:bg-slate-100">
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </header>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          {items.map(([title, body]) => (
+            <article key={title} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
+              <p className="mt-1 text-xs leading-5 text-slate-600">{body}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function ModelStatusDialog({
+  onClose,
+  onOpenAgent
+}: {
+  onClose: () => void;
+  onOpenAgent: () => void;
+}) {
+  const [models, setModels] = useState<ModelCatalogItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useCloseOnEscape(onClose);
+
+  useEffect(() => {
+    let mounted = true;
+    fetch("/api/media-generation")
+      .then((response) => response.json())
+      .then((payload: { data?: ModelCatalogItem[] }) => {
+        if (mounted) {
+          setModels(payload.data ?? []);
+          setError(null);
+        }
+      })
+      .catch(() => {
+        if (mounted) {
+          setError("模型状态加载失败，请稍后重试。");
+        }
+      })
+      .finally(() => {
+        if (mounted) {
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const availableCount = models.filter((model) => model.available).length;
+  const imageCount = models.filter((model) => model.mediaType === "image").length;
+  const videoCount = models.filter((model) => model.mediaType === "video").length;
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/45 p-4 backdrop-blur-sm"
+      onClick={(event) => {
+        if (event.target === event.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <section className="flex max-h-[min(760px,calc(100vh-32px))] w-full max-w-4xl flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl">
+        <header className="flex items-start justify-between gap-4 border-b border-slate-100 p-5">
+          <div>
+            <h2 className="text-base font-semibold text-slate-950">模型与额度状态</h2>
+            <p className="mt-1 text-xs leading-5 text-slate-500">
+              当前模型池：{models.length || "-"} 个模型，{availableCount || 0} 个可直接使用，图片 {imageCount || 0} 个，视频 {videoCount || 0} 个。
+            </p>
+          </div>
+          <button type="button" title="关闭" onClick={onClose} className="rounded-md p-1 text-slate-400 hover:bg-slate-100">
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </header>
+        <div className="min-h-0 overflow-y-auto p-5">
+          {loading ? (
+            <div className="flex h-36 items-center justify-center text-sm text-slate-500">
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+              正在读取模型状态
+            </div>
+          ) : error ? (
+            <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>
+          ) : (
+            <div className="grid gap-3 md:grid-cols-2">
+              {models.map((model) => (
+                <article key={model.id} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h3 className="text-sm font-semibold text-slate-900">{model.label}</h3>
+                      <p className="mt-1 text-[11px] text-slate-500">
+                        {canvasProviderDisplayName(model.provider)} · {model.mediaType === "video" ? "视频" : "图片"}
+                      </p>
+                    </div>
+                    <span className={model.available ? "rounded bg-emerald-50 px-2 py-1 text-[10px] font-semibold text-emerald-700" : "rounded bg-amber-50 px-2 py-1 text-[10px] font-semibold text-amber-700"}>
+                      {model.available ? "可用" : "需 Key"}
+                    </span>
+                  </div>
+                  <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-600">{model.description}</p>
+                  <p className="mt-2 text-[10px] text-slate-400">
+                    比例 {model.aspectRatios?.join(" / ") ?? "-"} · 画质 {model.qualityOptions?.join(" / ") ?? "-"}
+                    {model.durationOptions?.length ? ` · 时长 ${model.durationOptions.join(" / ")} 秒` : ""}
+                  </p>
+                </article>
+              ))}
+            </div>
+          )}
+        </div>
+        <footer className="flex justify-end border-t border-slate-100 p-4">
+          <button
+            type="button"
+            onClick={onOpenAgent}
+            className="h-10 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white hover:bg-slate-800"
+          >
+            打开 Agent 设置
+          </button>
+        </footer>
+      </section>
     </div>
   );
 }
@@ -1970,6 +2380,48 @@ function getCanvasMediaSize(
     width: Math.round(Math.max(width, 180)),
     height: Math.round(Math.max(height, 120))
   };
+}
+
+function safeFilename(value: string) {
+  return (
+    value
+      .trim()
+      .replace(/[^a-zA-Z0-9\u4e00-\u9fa5._-]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 64) || "rufo-canvas"
+  );
+}
+
+async function copyTextToClipboard(value: string) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(value);
+    return;
+  }
+
+  const textarea = document.createElement("textarea");
+  textarea.value = value;
+  textarea.setAttribute("readonly", "true");
+  textarea.style.position = "fixed";
+  textarea.style.left = "-9999px";
+  textarea.style.top = "0";
+  document.body.appendChild(textarea);
+  textarea.select();
+  const copied = document.execCommand("copy");
+  textarea.remove();
+
+  if (!copied) {
+    throw new Error("Clipboard copy failed.");
+  }
+}
+
+function canvasProviderDisplayName(provider: string) {
+  if (provider === "pollinations") return "Pollinations";
+  if (provider === "huggingface") return "Hugging Face";
+  if (provider === "agnes") return "Agnes AI";
+  if (provider === "nano-banana") return "Nano Banana";
+  if (provider === "gptlmage2") return "GPTlmage2";
+  if (provider === "pollinations-free") return "公共模型";
+  return provider;
 }
 
 function collectSelectedNodeIds(nodes: CanvasNode[]) {
