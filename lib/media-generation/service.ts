@@ -8,12 +8,14 @@ import type {
   MediaQuality,
   MediaReferenceFit,
   MediaReferenceMode,
+  MediaType,
   ProviderCredentials
 } from "./types";
 
 export type GenerateMediaInput = {
   modelId: string;
   prompt: string;
+  mediaType?: MediaType;
   referenceImageUrls?: string[];
   referenceMode?: MediaReferenceMode;
   referenceFit?: MediaReferenceFit;
@@ -192,6 +194,7 @@ async function generatePollinationsFreeImage(
   url.searchParams.set("height", String(height));
   url.searchParams.set("nologo", "true");
   url.searchParams.set("enhance", "true");
+  url.searchParams.set("quality", pollinationsImageQuality(input.quality));
   url.searchParams.set("seed", String(input.seed ?? Math.floor(Math.random() * 2_147_483_647)));
 
   const response = await providerFetch(
@@ -249,13 +252,11 @@ async function generatePollinationsMedia(
   url.searchParams.set("model", providerModel);
   url.searchParams.set("nologo", "true");
   url.searchParams.set("safe", "true");
+  url.searchParams.set("quality", pollinationsImageQuality(input.quality));
 
   if (mediaType === "image") {
     url.searchParams.set("width", String(clampDimension(input.width ?? 1024)));
     url.searchParams.set("height", String(clampDimension(input.height ?? 1024)));
-    if (["gptimage", "gptimage-large", "gpt-image-2"].includes(providerModel)) {
-      url.searchParams.set("quality", pollinationsImageQuality(input.quality));
-    }
   } else {
     url.searchParams.set("width", String(input.width ?? 1280));
     url.searchParams.set("height", String(input.height ?? 720));
@@ -744,6 +745,7 @@ function normalizeMediaInput(input: GenerateMediaInput) {
   const dimensions = resolveMediaDimensions(model.mediaType, aspectRatio, quality);
   const normalizedInput: GenerateMediaInput = {
     ...input,
+    mediaType: model.mediaType,
     aspectRatio,
     quality,
     width: dimensions.width,
@@ -1032,11 +1034,33 @@ function agnesFrameCount(
   return Math.min(frameCount, maximumFrames);
 }
 
+function mediaQualityInstruction(input: GenerateMediaInput) {
+  const quality = input.quality ?? "standard";
+
+  if (input.mediaType === "video") {
+    if (quality === "ultra") {
+      return "Render for premium 1080p delivery with stable motion, clean detail, low compression artifacts, and consistent frames.";
+    }
+    if (quality === "high") {
+      return "Render for clean 720p delivery with stable motion, clear details, and limited artifacts.";
+    }
+    return "Render for fast 480p delivery while keeping the subject readable, stable, and clean.";
+  }
+
+  if (quality === "ultra") {
+    return "Target maximum-detail image quality with crisp edges, refined texture, clean lighting, and print-ready clarity.";
+  }
+  if (quality === "high") {
+    return "Target high-definition image quality with clear texture, clean edges, and polished lighting.";
+  }
+  return "Target standard image quality with clean composition, readable subject detail, and efficient rendering.";
+}
+
 function promptWithReferenceFit(input: GenerateMediaInput) {
   const target = input.aspectRatio ?? "the requested aspect ratio";
   const dimensionText =
     input.width && input.height ? ` ${input.width}x${input.height}` : "";
-  const baseInstruction = `Compose natively for ${target}${dimensionText}. Preserve natural subject proportions and geometry; never stretch, squeeze, or distort people, products, logos, text, or reference content.`;
+  const baseInstruction = `Compose natively for ${target}${dimensionText}. Preserve natural subject proportions and geometry; never stretch, squeeze, or distort people, products, logos, text, or reference content. ${mediaQualityInstruction(input)}`;
 
   if (!input.referenceImageUrls?.length) {
     return `${input.prompt}\n\nCanvas aspect-ratio requirement: ${baseInstruction}`;

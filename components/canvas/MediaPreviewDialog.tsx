@@ -1,21 +1,36 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Check, Download, Maximize2, X } from "lucide-react";
-import type { CanvasNode } from "./types";
+import { useEffect, useRef, useState } from "react";
+import {
+  Check,
+  Crop,
+  Download,
+  Maximize2,
+  Minimize2,
+  PenLine,
+  SquareDashedMousePointer,
+  Type,
+  X,
+  type LucideIcon
+} from "lucide-react";
+import type { CanvasMediaEditMode, CanvasNode } from "./types";
 
 export function MediaPreviewDialog({
   node,
   onClose,
-  onRename
+  onRename,
+  onEdit
 }: {
   node: CanvasNode;
   onClose: () => void;
   onRename: (name: string) => void;
+  onEdit?: (mode: CanvasMediaEditMode) => void;
 }) {
   const data = node.data;
   const mediaType = data.mediaType ?? "image";
+  const previewRef = useRef<HTMLDivElement>(null);
   const [name, setName] = useState(data.label);
+  const [immersive, setImmersive] = useState(true);
 
   useEffect(() => {
     setName(data.label);
@@ -27,23 +42,69 @@ export function MediaPreviewDialog({
     onRename(nextName);
   }
 
+  async function toggleImmersive() {
+    const nextImmersive = !immersive;
+    setImmersive(nextImmersive);
+
+    if (!nextImmersive) {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen().catch(() => undefined);
+      }
+      return;
+    }
+
+    await previewRef.current?.requestFullscreen?.().catch(() => undefined);
+  }
+
+  function closePreview() {
+    if (document.fullscreenElement) {
+      void document.exitFullscreen().catch(() => undefined);
+    }
+    onClose();
+  }
+
   return (
-    <div className="fixed inset-0 z-[100] flex bg-black/75 p-4 backdrop-blur-sm">
+    <div
+      ref={previewRef}
+      className={
+        immersive
+          ? "fixed inset-0 z-[100] flex bg-black p-3"
+          : "fixed inset-0 z-[100] flex bg-black/75 p-4 backdrop-blur-sm"
+      }
+    >
       <button
         type="button"
         title="关闭全屏预览"
-        onClick={onClose}
+        onClick={closePreview}
         className="absolute right-5 top-5 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-slate-700 shadow-lg"
       >
         <X className="h-5 w-5" aria-hidden="true" />
       </button>
+      <button
+        type="button"
+        title={immersive ? "退出沉浸预览" : "沉浸预览"}
+        onClick={() => void toggleImmersive()}
+        className="absolute right-[4.25rem] top-5 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/95 text-slate-700 shadow-lg"
+      >
+        {immersive ? (
+          <Minimize2 className="h-5 w-5" aria-hidden="true" />
+        ) : (
+          <Maximize2 className="h-5 w-5" aria-hidden="true" />
+        )}
+      </button>
 
-      <div className="m-auto grid max-h-full w-full max-w-6xl grid-cols-[minmax(0,1fr)_280px] overflow-hidden rounded-lg bg-white shadow-2xl max-md:grid-cols-1">
-        <div className="flex min-h-[55vh] items-center justify-center bg-black">
+      <div
+        className={
+          immersive
+            ? "m-auto flex h-full w-full items-center justify-center overflow-hidden bg-black"
+            : "m-auto grid max-h-full w-full max-w-6xl grid-cols-[minmax(0,1fr)_280px] overflow-hidden rounded-lg bg-white shadow-2xl max-md:grid-cols-1"
+        }
+      >
+        <div className={immersive ? "flex h-full w-full items-center justify-center bg-black" : "flex min-h-[55vh] items-center justify-center bg-black"}>
           {data.assetUrl && mediaType === "video" ? (
             <video
               src={data.assetUrl}
-              className="max-h-[82vh] max-w-full"
+              className={immersive ? "max-h-[96vh] max-w-[96vw]" : "max-h-[82vh] max-w-full"}
               controls
               autoPlay
               loop
@@ -54,14 +115,14 @@ export function MediaPreviewDialog({
             <img
               src={data.assetUrl}
               alt={data.label}
-              className="max-h-[82vh] max-w-full object-contain"
+              className={immersive ? "max-h-[96vh] max-w-[96vw] object-contain" : "max-h-[82vh] max-w-full object-contain"}
             />
           ) : (
             <p className="text-sm text-white/60">媒体不可用</p>
           )}
         </div>
 
-        <aside className="overflow-y-auto p-5">
+        <aside className={immersive ? "hidden" : "overflow-y-auto p-5"}>
           <div className="mb-5 flex items-center gap-2 text-sm font-semibold text-slate-900">
             <Maximize2 className="h-4 w-4" aria-hidden="true" />
             媒体属性
@@ -107,6 +168,17 @@ export function MediaPreviewDialog({
               <Metadata label="时长" value={`${data.durationSeconds} 秒`} />
             ) : null}
           </dl>
+          {onEdit ? (
+            <div className="mt-5">
+              <p className="mb-2 text-xs font-medium text-slate-500">二次编辑</p>
+              <div className="grid grid-cols-2 gap-2">
+                <PreviewEditButton icon={Crop} label="裁切" onClick={() => { onEdit("crop"); closePreview(); }} />
+                <PreviewEditButton icon={PenLine} label="涂鸦" onClick={() => { onEdit("doodle"); closePreview(); }} />
+                <PreviewEditButton icon={SquareDashedMousePointer} label="框选" onClick={() => { onEdit("selection"); closePreview(); }} />
+                <PreviewEditButton icon={Type} label="文字" onClick={() => { onEdit("text"); closePreview(); }} />
+              </div>
+            </div>
+          ) : null}
           {data.prompt ? (
             <div className="mt-5">
               <p className="mb-1 text-xs font-medium text-slate-500">生成描述</p>
@@ -128,6 +200,27 @@ export function MediaPreviewDialog({
         </aside>
       </div>
     </div>
+  );
+}
+
+function PreviewEditButton({
+  icon: Icon,
+  label,
+  onClick
+}: {
+  icon: LucideIcon;
+  label: string;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="inline-flex h-9 items-center justify-center gap-2 rounded-md border border-slate-200 text-xs font-semibold text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+    >
+      <Icon className="h-3.5 w-3.5" aria-hidden="true" />
+      {label}
+    </button>
   );
 }
 

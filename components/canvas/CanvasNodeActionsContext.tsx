@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, type ReactNode } from "react";
+import type { CanvasMediaEditMode } from "./types";
 
 export type CanvasNodeActions = {
   onBeforeTransform: () => void;
@@ -10,6 +11,7 @@ export type CanvasNodeActions = {
   onUseAsReference: (nodeId: string) => void;
   onRename: (nodeId: string, name: string) => void;
   onOpenPreview: (nodeId: string) => void;
+  onEditMedia: (nodeId: string, mode: CanvasMediaEditMode) => void;
   onRetryGeneration: (nodeId: string) => void;
 };
 

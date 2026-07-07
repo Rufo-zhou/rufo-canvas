@@ -100,6 +100,7 @@ import type {
   CanvasEdge,
   CanvasGenerationRequest,
   CanvasGenerationUpdate,
+  CanvasMediaEditMode,
   CanvasNode,
   CanvasReferenceRequest,
   CanvasSnapshot,
@@ -644,6 +645,7 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
         .then(() => {
           dirtyRef.current = false;
           setAutosaveState("saved");
+          setError((current) => (isAutosaveError(current, copy.errors.autoSave) ? null : current));
         })
         .catch((caughtError) => {
           setAutosaveState("error");
@@ -664,6 +666,7 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
         .then(() => {
           dirtyRef.current = false;
           setAutosaveState("saved");
+          setError((current) => (isAutosaveError(current, copy.errors.autoSave) ? null : current));
         })
         .catch(() => {
           setAutosaveState("error");
@@ -672,7 +675,7 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
 
     document.addEventListener("visibilitychange", flushBeforeHidden);
     return () => document.removeEventListener("visibilitychange", flushBeforeHidden);
-  }, [persistSnapshot]);
+  }, [copy.errors.autoSave, persistSnapshot]);
 
   async function handleSave() {
     setSaving(true);
@@ -757,21 +760,35 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
       const existingDraft = request.draftNodeId
         ? current.find((node) => node.id === request.draftNodeId)
         : undefined;
-      const generationNode = createGenerationNode(
+      const baseGenerationNode = createGenerationNode(
         request,
         existingDraft?.position ??
           getCanvasCenter(flow, sectionRef.current)
       );
+      const generationNode = existingDraft
+        ? baseGenerationNode
+        : {
+            ...baseGenerationNode,
+            position: findAvailableCanvasPosition(
+              baseGenerationNode.position,
+              readCanvasNodeSize(baseGenerationNode),
+              current
+            )
+          };
 
       if (existingDraft) {
-        return current.map((node) =>
+        const next = current.map((node) =>
           node.id === existingDraft.id
             ? { ...generationNode, id: existingDraft.id }
             : node
         );
+        nodesRef.current = next;
+        return next;
       }
 
-      return [...current, generationNode];
+      const next = [...current, generationNode];
+      nodesRef.current = next;
+      return next;
     });
     setStatus(copy.status.generationAdded);
   }
@@ -817,32 +834,49 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
 
     setNodes((current) => {
       if (current.some((node) => node.id === assetNodeId)) {
-        return current
+        const next = current
           .filter((node) => node.id !== sourceNodeId)
           .map((node) => ({
             ...node,
             selected: node.id === assetNodeId
           }));
+        nodesRef.current = next;
+        return next;
       }
 
       const generationNode = sourceNodeId
         ? current.find((node) => node.id === sourceNodeId)
         : undefined;
       const nextPosition = generationNode?.position;
-      const nextNode = createMediaNode(media, current.length, nextPosition);
+      const provisionalNode = createMediaNode(media, current.length, nextPosition);
+      const nextNode = {
+        ...provisionalNode,
+        position: findAvailableCanvasPosition(
+          provisionalNode.position,
+          readCanvasNodeSize(provisionalNode),
+          current,
+          {
+            excludeIds: generationNode ? new Set([generationNode.id]) : undefined
+          }
+        )
+      };
 
       if (generationNode) {
-        return current.map((node) =>
+        const next = current.map((node) =>
           node.id === generationNode.id
             ? { ...nextNode, selected: true }
             : { ...node, selected: false }
         );
+        nodesRef.current = next;
+        return next;
       }
 
-      return [
+      const next = [
         ...current.map((node) => ({ ...node, selected: false })),
         { ...nextNode, selected: true }
       ];
+      nodesRef.current = next;
+      return next;
     });
 
     if (sourceNodeId) {
@@ -937,7 +971,19 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
               data: { kind, label: "画框" }
             };
 
-    setNodes((current) => [...current, node]);
+    setNodes((current) => {
+      const nextNode = {
+        ...node,
+        position: findAvailableCanvasPosition(
+          node.position,
+          readCanvasNodeSize(node),
+          current
+        )
+      };
+      const next = [...current, nextNode];
+      nodesRef.current = next;
+      return next;
+    });
   }
 
   async function handleUpload(event: ChangeEvent<HTMLInputElement>) {
@@ -1116,9 +1162,17 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
       }
     };
     setNodes((current) => {
+      const positionedDuplicate = {
+        ...duplicate,
+        position: findAvailableCanvasPosition(
+          duplicate.position,
+          readCanvasNodeSize(duplicate),
+          current
+        )
+      };
       const next = [
         ...current.map((node) => ({ ...node, selected: false })),
-        duplicate
+        positionedDuplicate
       ];
       nodesRef.current = next;
       return next;
@@ -1174,6 +1228,57 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
     setSidebarFocusRequest((current) => current + 1);
   }
 
+  function editMediaNode(nodeId: string, mode: CanvasMediaEditMode) {
+    const source = nodesRef.current.find((candidate) => candidate.id === nodeId);
+    if (!source || source.data.kind !== "asset") {
+      return;
+    }
+
+    recordHistory();
+
+    if (mode === "crop") {
+      const enteringCrop = source.data.objectFit !== "cover";
+      const nextObjectFit = enteringCrop ? ("cover" as const) : ("contain" as const);
+      const nextResizeMode = enteringCrop ? ("free" as const) : ("aspect" as const);
+      setNodes((current) => {
+        const next = current.map((node) =>
+          node.id === nodeId
+            ? {
+                ...node,
+                selected: true,
+                data: {
+                  ...node.data,
+                  objectFit: nextObjectFit,
+                  resizeMode: nextResizeMode
+                }
+              }
+            : { ...node, selected: false }
+        );
+        nodesRef.current = next;
+        return next;
+      });
+      setStatus(
+        enteringCrop
+          ? "已启用裁切框：拖动边角可改变裁切范围"
+          : "已恢复完整适应显示"
+      );
+      return;
+    }
+
+    setNodes((current) => {
+      const currentSource =
+        current.find((candidate) => candidate.id === nodeId) ?? source;
+      const editNode = createMediaEditElementNode(currentSource, current, mode);
+      const next = [
+        ...current.map((node) => ({ ...node, selected: false })),
+        editNode
+      ];
+      nodesRef.current = next;
+      return next;
+    });
+    setStatus(mediaEditStatusLabel(mode));
+  }
+
   function sendNodeToReference(
     nodeId: string,
     draftPosition?: { x: number; y: number }
@@ -1194,9 +1299,22 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
       recordHistory();
       draftNodeId = `generation-draft-${crypto.randomUUID()}`;
       setNodes((current) => {
+        const draftNode = createDraftGenerationNode(
+          draftNodeId!,
+          draftPosition,
+          node
+        );
+        const positionedDraftNode = {
+          ...draftNode,
+          position: findAvailableCanvasPosition(
+            draftNode.position,
+            readCanvasNodeSize(draftNode),
+            current
+          )
+        };
         const next = [
           ...current,
-          createDraftGenerationNode(draftNodeId!, draftPosition, node)
+          positionedDraftNode
         ];
         nodesRef.current = next;
         return next;
@@ -1326,6 +1444,7 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
     onUseAsReference: (nodeId: string) => sendNodeToReference(nodeId),
     onRename: renameNode,
     onOpenPreview: setPreviewNodeId,
+    onEditMedia: editMediaNode,
     onRetryGeneration: retryGeneration
   };
   const canUndo = historyAvailability.undo > 0;
@@ -1904,6 +2023,7 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
           node={previewNode}
           onClose={() => setPreviewNodeId(null)}
           onRename={(name) => renameNode(previewNode.id, name)}
+          onEdit={(mode) => editMediaNode(previewNode.id, mode)}
         />
       ) : null}
 
@@ -2467,6 +2587,83 @@ function createMediaNode(
   };
 }
 
+function createMediaEditElementNode(
+  sourceNode: CanvasNode,
+  allNodes: CanvasNode[],
+  mode: Exclude<CanvasMediaEditMode, "crop">
+): CanvasNode {
+  const sourcePosition = getNodeAbsolutePosition(sourceNode, allNodes);
+  const sourceSize = readCanvasNodeSize(sourceNode) ?? { width: 320, height: 320 };
+  const id = `${mode}-${crypto.randomUUID()}`;
+
+  if (mode === "text") {
+    const width = Math.round(Math.min(Math.max(sourceSize.width * 0.58, 180), sourceSize.width - 24));
+    return {
+      id,
+      type: "canvasElement",
+      position: {
+        x: Math.round(sourcePosition.x + sourceSize.width * 0.08),
+        y: Math.round(sourcePosition.y + sourceSize.height * 0.12)
+      },
+      style: { width, height: 86, zIndex: 40 },
+      selected: true,
+      data: {
+        kind: "text",
+        label: "点击编辑文字",
+        text: "点击编辑文字"
+      }
+    };
+  }
+
+  if (mode === "selection") {
+    const width = Math.round(Math.min(Math.max(sourceSize.width * 0.5, 140), sourceSize.width - 28));
+    const height = Math.round(Math.min(Math.max(sourceSize.height * 0.42, 110), sourceSize.height - 28));
+    return {
+      id,
+      type: "canvasElement",
+      position: {
+        x: Math.round(sourcePosition.x + (sourceSize.width - width) / 2),
+        y: Math.round(sourcePosition.y + (sourceSize.height - height) / 2)
+      },
+      style: { width, height, zIndex: 35 },
+      selected: true,
+      data: {
+        kind: "frame",
+        label: "框选区域"
+      }
+    };
+  }
+
+  const width = Math.round(Math.min(Math.max(sourceSize.width * 0.62, 140), sourceSize.width - 30));
+  const height = Math.round(Math.min(Math.max(sourceSize.height * 0.28, 72), sourceSize.height - 30));
+  const midY = Math.round(height * 0.55);
+  return {
+    id,
+    type: "canvasElement",
+    position: {
+      x: Math.round(sourcePosition.x + sourceSize.width * 0.14),
+      y: Math.round(sourcePosition.y + sourceSize.height * 0.18)
+    },
+    style: { width, height, zIndex: 45 },
+    selected: true,
+    data: {
+      kind: "drawing",
+      label: "涂鸦标注",
+      path: `M 12 ${midY} C ${Math.round(width * 0.25)} 8 ${Math.round(width * 0.45)} ${height - 12} ${Math.round(width * 0.64)} ${midY} S ${width - 26} 12 ${width - 12} ${Math.round(height * 0.42)}`,
+      width,
+      height,
+      color: "#f97316"
+    }
+  };
+}
+
+function mediaEditStatusLabel(mode: CanvasMediaEditMode) {
+  if (mode === "doodle") return "已添加涂鸦标注层";
+  if (mode === "selection") return "已添加框选区域";
+  if (mode === "text") return "已添加文字层";
+  return "已更新媒体编辑模式";
+}
+
 function readPointerClientPoint(event: MouseEvent | TouchEvent) {
   if ("changedTouches" in event) {
     const touch = event.changedTouches[0];
@@ -2779,6 +2976,103 @@ function getNodeAbsolutePosition(
     x: parentPosition.x + node.position.x,
     y: parentPosition.y + node.position.y
   };
+}
+
+function findAvailableCanvasPosition(
+  preferredPosition: CanvasNodePosition,
+  size: { width: number; height: number } | null,
+  nodes: CanvasNode[],
+  options?: {
+    excludeIds?: Set<string>;
+    padding?: number;
+  }
+): CanvasNodePosition {
+  const nodeSize = size ?? { width: 320, height: 240 };
+  const padding = options?.padding ?? 36;
+  const stepX = Math.max(nodeSize.width + padding, 260);
+  const stepY = Math.max(nodeSize.height + padding, 220);
+
+  for (let ring = 0; ring <= 10; ring += 1) {
+    for (let dx = -ring; dx <= ring; dx += 1) {
+      for (let dy = -ring; dy <= ring; dy += 1) {
+        if (Math.max(Math.abs(dx), Math.abs(dy)) !== ring) {
+          continue;
+        }
+
+        const candidate = {
+          x: Math.round(preferredPosition.x + dx * stepX),
+          y: Math.round(preferredPosition.y + dy * stepY)
+        };
+
+        if (isCanvasPositionFree(candidate, nodeSize, nodes, {
+          excludeIds: options?.excludeIds,
+          padding
+        })) {
+          return candidate;
+        }
+      }
+    }
+  }
+
+  return {
+    x: Math.round(preferredPosition.x + stepX * 2),
+    y: Math.round(preferredPosition.y + stepY * 2)
+  };
+}
+
+function isCanvasPositionFree(
+  position: CanvasNodePosition,
+  size: { width: number; height: number },
+  nodes: CanvasNode[],
+  options: {
+    excludeIds?: Set<string>;
+    padding: number;
+  }
+) {
+  const candidateRect = {
+    x: position.x - options.padding,
+    y: position.y - options.padding,
+    width: size.width + options.padding * 2,
+    height: size.height + options.padding * 2
+  };
+
+  return nodes.every((node) => {
+    if (node.hidden || options.excludeIds?.has(node.id)) {
+      return true;
+    }
+
+    const nodeSize = readCanvasNodeSize(node);
+    if (!nodeSize) {
+      return true;
+    }
+
+    const nodePosition = getNodeAbsolutePosition(node, nodes);
+    return !rectsOverlap(candidateRect, {
+      x: nodePosition.x,
+      y: nodePosition.y,
+      width: nodeSize.width,
+      height: nodeSize.height
+    });
+  });
+}
+
+function rectsOverlap(
+  first: { x: number; y: number; width: number; height: number },
+  second: { x: number; y: number; width: number; height: number }
+) {
+  return (
+    first.x < second.x + second.width &&
+    first.x + first.width > second.x &&
+    first.y < second.y + second.height &&
+    first.y + first.height > second.y
+  );
+}
+
+function isAutosaveError(error: string | null, fallbackMessage: string) {
+  return (
+    error === fallbackMessage ||
+    error?.startsWith("Failed to save canvas snapshot:") === true
+  );
 }
 
 function readPositiveNumber(value: unknown) {

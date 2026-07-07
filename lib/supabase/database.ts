@@ -131,34 +131,40 @@ export async function saveCanvasSnapshot(
   userId: string,
   snapshot: CanvasSnapshot
 ) {
-  const { data: latest, error: latestError } = await supabase
-    .from("canvas_snapshots")
-    .select("version")
-    .eq("project_id", projectId)
-    .order("version", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const { data: latest, error: latestError } = await supabase
+      .from("canvas_snapshots")
+      .select("version")
+      .eq("project_id", projectId)
+      .order("version", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-  if (latestError) {
-    throw new Error(`Failed to inspect canvas version: ${latestError.message}`);
+    if (latestError) {
+      throw new Error(`Failed to inspect canvas version: ${latestError.message}`);
+    }
+
+    const { data, error } = await supabase
+      .from("canvas_snapshots")
+      .insert({
+        project_id: projectId,
+        created_by: userId,
+        version: (latest?.version ?? 0) + 1,
+        snapshot: serializeJson(snapshot)
+      })
+      .select()
+      .single();
+
+    if (!error) {
+      return data;
+    }
+
+    if (error.code !== "23505" || attempt === 4) {
+      throw new Error(`Failed to save canvas snapshot: ${error.message}`);
+    }
   }
 
-  const { data, error } = await supabase
-    .from("canvas_snapshots")
-    .insert({
-      project_id: projectId,
-      created_by: userId,
-      version: (latest?.version ?? 0) + 1,
-      snapshot: serializeJson(snapshot)
-    })
-    .select()
-    .single();
-
-  if (error) {
-    throw new Error(`Failed to save canvas snapshot: ${error.message}`);
-  }
-
-  return data;
+  throw new Error("Failed to save canvas snapshot: version conflict.");
 }
 
 function serializeJson(value: CanvasSnapshot): Json {

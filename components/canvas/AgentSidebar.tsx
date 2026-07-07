@@ -15,6 +15,7 @@ import {
   ImagePlus,
   Images,
   Loader2,
+  Maximize2,
   Plus,
   RefreshCw,
   SendHorizontal,
@@ -449,6 +450,7 @@ export function AgentSidebar({
     null
   );
   const [polishingPrompt, setPolishingPrompt] = useState(false);
+  const [promptEditorOpen, setPromptEditorOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [errorSolution, setErrorSolution] = useState<string | null>(null);
   const [historyRecords, setHistoryRecords] = useState<
@@ -1154,19 +1156,30 @@ export function AgentSidebar({
           <label className="block">
             <span className="mb-1 flex items-center justify-between gap-2">
               <span className="text-xs font-medium text-slate-600">{copy.prompt}</span>
-              <button
-                type="button"
-                onClick={handlePolishPrompt}
-                disabled={polishingPrompt}
-                className="inline-flex h-7 items-center gap-1 rounded-md border border-slate-200 bg-white px-2 text-[11px] font-semibold text-slate-600 hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {polishingPrompt ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
-                ) : (
-                  <WandSparkles className="h-3.5 w-3.5" aria-hidden="true" />
-                )}
-                {copy.polish}
-              </button>
+              <span className="flex items-center gap-1">
+                <button
+                  type="button"
+                  title="放大编辑提示词"
+                  onClick={() => setPromptEditorOpen(true)}
+                  className="inline-flex h-7 items-center gap-1 rounded-md border border-slate-200 bg-white px-2 text-[11px] font-semibold text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                >
+                  <Maximize2 className="h-3.5 w-3.5" aria-hidden="true" />
+                  放大
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePolishPrompt}
+                  disabled={polishingPrompt}
+                  className="inline-flex h-7 items-center gap-1 rounded-md border border-slate-200 bg-white px-2 text-[11px] font-semibold text-slate-600 hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {polishingPrompt ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                  ) : (
+                    <WandSparkles className="h-3.5 w-3.5" aria-hidden="true" />
+                  )}
+                  {copy.polish}
+                </button>
+              </span>
             </span>
             <textarea
               ref={promptRef}
@@ -1504,7 +1517,84 @@ export function AgentSidebar({
         onClose={() => setSettingsOpen(false)}
         onChange={setProviderCredentials}
       />
+      {promptEditorOpen ? (
+        <PromptEditorDialog
+          value={prompt}
+          placeholder={mediaType === "video" ? copy.videoPlaceholder : copy.imagePlaceholder}
+          onChange={setPrompt}
+          onClose={() => {
+            setPromptEditorOpen(false);
+            window.setTimeout(() => promptRef.current?.focus(), 0);
+          }}
+        />
+      ) : null}
     </aside>
+  );
+}
+
+function PromptEditorDialog({
+  value,
+  placeholder,
+  onChange,
+  onClose
+}: {
+  value: string;
+  placeholder: string;
+  onChange: (value: string) => void;
+  onClose: () => void;
+}) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    textareaRef.current?.focus();
+  }, []);
+
+  return (
+    <div
+      className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/35 p-4 backdrop-blur-sm"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <section className="flex max-h-[min(760px,calc(100vh-32px))] w-[min(860px,calc(100vw-32px))] flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
+        <header className="flex h-12 items-center justify-between border-b border-slate-100 px-4">
+          <div>
+            <h3 className="text-sm font-semibold text-slate-900">画面描述</h3>
+            <p className="text-[10px] text-slate-400">适合编辑长提示词，不会占满整个屏幕</p>
+          </div>
+          <button
+            type="button"
+            title="关闭"
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </header>
+        <div className="min-h-0 flex-1 p-4">
+          <textarea
+            ref={textareaRef}
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+            placeholder={placeholder}
+            className="h-[min(56vh,460px)] w-full resize-none rounded-lg border border-slate-200 p-4 text-sm leading-6 text-slate-900 outline-none placeholder:text-slate-400 focus:border-slate-900"
+          />
+        </div>
+        <footer className="flex items-center justify-between border-t border-slate-100 px-4 py-3">
+          <span className="text-xs text-slate-400">{value.trim().length} 字符</span>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-9 items-center gap-2 rounded-md bg-slate-950 px-4 text-xs font-semibold text-white hover:bg-slate-800"
+          >
+            <Check className="h-3.5 w-3.5" aria-hidden="true" />
+            套用并关闭
+          </button>
+        </footer>
+      </section>
+    </div>
   );
 }
 

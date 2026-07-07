@@ -16,6 +16,8 @@ export type CanvasNodeKind =
   | "marker"
   | "drawing";
 
+export type CanvasMediaEditMode = "crop" | "doodle" | "selection" | "text";
+
 export type CanvasNodeData = Record<string, unknown> & {
   label: string;
   kind: CanvasNodeKind;
@@ -33,6 +35,8 @@ export type CanvasNodeData = Record<string, unknown> & {
   aspectRatio?: MediaAspectRatio;
   quality?: MediaQuality;
   audio?: boolean;
+  objectFit?: "contain" | "cover";
+  resizeMode?: "aspect" | "free";
   text?: string;
   color?: string;
   path?: string;

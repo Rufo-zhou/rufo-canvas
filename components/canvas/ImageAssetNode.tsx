@@ -5,11 +5,15 @@ import { NodeResizer, type NodeProps } from "@xyflow/react";
 import {
   Check,
   Copy,
+  Crop,
   Download,
   GripHorizontal,
   Maximize2,
+  PenLine,
   Sparkles,
-  Trash2
+  SquareDashedMousePointer,
+  Trash2,
+  Type
 } from "lucide-react";
 import { useCanvasNodeActions } from "./CanvasNodeActionsContext";
 import { CanvasConnectionHandle } from "./CanvasConnectionHandle";
@@ -19,6 +23,7 @@ export function ImageAssetNode({ id, data, selected }: NodeProps<CanvasNode>) {
   const actions = useCanvasNodeActions();
   const assetUrl = data.assetUrl;
   const mediaType = data.mediaType ?? "image";
+  const objectFitClass = data.objectFit === "cover" ? "object-cover" : "object-contain";
   const [name, setName] = useState(data.label);
 
   useEffect(() => {
@@ -42,7 +47,7 @@ export function ImageAssetNode({ id, data, selected }: NodeProps<CanvasNode>) {
       <NodeResizer
         color="#0f172a"
         isVisible={selected}
-        keepAspectRatio
+        keepAspectRatio={data.resizeMode !== "free"}
         minWidth={160}
         minHeight={120}
         onResizeStart={() => actions?.onBeforeTransform()}
@@ -50,7 +55,7 @@ export function ImageAssetNode({ id, data, selected }: NodeProps<CanvasNode>) {
         handleClassName="!h-2.5 !w-2.5 !border !border-white"
       />
       {selected ? (
-        <div className="nodrag absolute -top-12 left-1/2 z-20 flex max-w-[min(420px,90vw)] -translate-x-1/2 items-center gap-1 rounded-md border border-slate-200 bg-white p-1 shadow-xl">
+        <div className="nodrag absolute -top-12 left-1/2 z-20 flex max-w-[min(620px,96vw)] -translate-x-1/2 items-center gap-1 rounded-md border border-slate-200 bg-white p-1 shadow-xl">
           <input
             value={name}
             aria-label="媒体名称"
@@ -73,6 +78,42 @@ export function ImageAssetNode({ id, data, selected }: NodeProps<CanvasNode>) {
             className="flex h-8 w-8 items-center justify-center rounded text-emerald-600 hover:bg-emerald-50"
           >
             <Check className="h-4 w-4" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            title={data.objectFit === "cover" ? "恢复完整适应" : "裁切"}
+            onClick={() => actions?.onEditMedia(id, "crop")}
+            className={
+              data.objectFit === "cover"
+                ? "flex h-8 w-8 items-center justify-center rounded bg-slate-950 text-white"
+                : "flex h-8 w-8 items-center justify-center rounded text-slate-600 hover:bg-slate-100"
+            }
+          >
+            <Crop className="h-4 w-4" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            title="涂鸦"
+            onClick={() => actions?.onEditMedia(id, "doodle")}
+            className="flex h-8 w-8 items-center justify-center rounded text-slate-600 hover:bg-slate-100"
+          >
+            <PenLine className="h-4 w-4" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            title="框选"
+            onClick={() => actions?.onEditMedia(id, "selection")}
+            className="flex h-8 w-8 items-center justify-center rounded text-slate-600 hover:bg-slate-100"
+          >
+            <SquareDashedMousePointer className="h-4 w-4" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            title="添加文字"
+            onClick={() => actions?.onEditMedia(id, "text")}
+            className="flex h-8 w-8 items-center justify-center rounded text-slate-600 hover:bg-slate-100"
+          >
+            <Type className="h-4 w-4" aria-hidden="true" />
           </button>
           <button
             type="button"
@@ -136,7 +177,7 @@ export function ImageAssetNode({ id, data, selected }: NodeProps<CanvasNode>) {
         {assetUrl && mediaType === "video" ? (
           <video
             src={assetUrl}
-            className="nodrag nowheel h-full w-full object-contain"
+            className={`nodrag nowheel h-full w-full ${objectFitClass}`}
             controls
             loop
             playsInline
@@ -147,7 +188,7 @@ export function ImageAssetNode({ id, data, selected }: NodeProps<CanvasNode>) {
           <img
             src={assetUrl}
             alt={data.label}
-            className="h-full w-full object-contain"
+            className={`h-full w-full ${objectFitClass}`}
             draggable={false}
           />
         ) : (
