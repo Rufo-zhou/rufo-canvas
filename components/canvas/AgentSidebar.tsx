@@ -26,6 +26,10 @@ import {
 } from "lucide-react";
 import { ApiSettingsDialog } from "@/components/settings/ApiSettingsDialog";
 import { useAuth } from "@/components/auth/AuthProvider";
+import {
+  usePreferences,
+  type RufoLanguage
+} from "@/components/settings/PreferencesProvider";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
   createSignedAssetUrl,
@@ -106,6 +110,195 @@ type MediaGenerationApiResponse = {
 };
 
 type SidebarView = "create" | "history";
+
+type AgentCopy = {
+  subtitle: string;
+  image: string;
+  video: string;
+  history: string;
+  backToCreate: string;
+  apiSettings: string;
+  close: string;
+  quickSkills: string;
+  model: string;
+  connected: string;
+  needsKey: string;
+  apiConnected: string;
+  pendingConfig: string;
+  connectApi: string;
+  prompt: string;
+  polish: string;
+  imagePlaceholder: string;
+  videoPlaceholder: string;
+  aspectRatio: string;
+  quality: string;
+  duration: string;
+  seconds: string;
+  audio: string;
+  generateAudio: string;
+  unsupportedAudio: string;
+  supplierQuota: string;
+  referenceMode: string;
+  referenceFit: string;
+  referenceImages: string;
+  addImage: string;
+  referenceAssets: string;
+  generating: string;
+  submitting: string;
+  generateImage: string;
+  generateVideo: string;
+};
+
+const agentCopyByLanguage: Record<RufoLanguage, AgentCopy> = {
+  "zh-CN": {
+    subtitle: "多供应商创作工作台",
+    image: "图片",
+    video: "视频",
+    history: "生成历史",
+    backToCreate: "返回创作",
+    apiSettings: "自助接入 API",
+    close: "关闭对话",
+    quickSkills: "快捷 Skills",
+    model: "模型",
+    connected: "已接入",
+    needsKey: "需 API Key",
+    apiConnected: "API 已接入",
+    pendingConfig: "待配置",
+    connectApi: "接入 API",
+    prompt: "画面描述",
+    polish: "润色",
+    imagePlaceholder: "描述主体、构图、光线、材质和风格",
+    videoPlaceholder: "描述主体、动作、镜头运动、光线和风格",
+    aspectRatio: "画面比例",
+    quality: "画质",
+    duration: "时长",
+    seconds: "秒",
+    audio: "音频",
+    generateAudio: "生成音频",
+    unsupportedAudio: "模型不支持",
+    supplierQuota: "按供应商额度调用",
+    referenceMode: "参考模式",
+    referenceFit: "比例适配",
+    referenceImages: "参考图片",
+    addImage: "添加图片",
+    referenceAssets: "参考素材",
+    generating: "生成中",
+    submitting: "正在提交",
+    generateImage: "生成图片",
+    generateVideo: "生成视频"
+  },
+  en: {
+    subtitle: "Multi-provider creative workspace",
+    image: "Image",
+    video: "Video",
+    history: "Generation history",
+    backToCreate: "Back to create",
+    apiSettings: "API settings",
+    close: "Close panel",
+    quickSkills: "Quick skills",
+    model: "Model",
+    connected: "Connected",
+    needsKey: "Needs API key",
+    apiConnected: "API connected",
+    pendingConfig: "Not configured",
+    connectApi: "Connect API",
+    prompt: "Prompt",
+    polish: "Polish",
+    imagePlaceholder: "Describe subject, composition, lighting, materials, and style",
+    videoPlaceholder: "Describe subject, action, camera movement, lighting, and style",
+    aspectRatio: "Aspect ratio",
+    quality: "Quality",
+    duration: "Duration",
+    seconds: "sec",
+    audio: "Audio",
+    generateAudio: "Generate audio",
+    unsupportedAudio: "Not supported",
+    supplierQuota: "Uses provider quota",
+    referenceMode: "Reference mode",
+    referenceFit: "Fit mode",
+    referenceImages: "Reference images",
+    addImage: "Add image",
+    referenceAssets: "References",
+    generating: "Generating",
+    submitting: "Submitting",
+    generateImage: "Generate image",
+    generateVideo: "Generate video"
+  },
+  ja: {
+    subtitle: "マルチプロバイダー作成パネル",
+    image: "画像",
+    video: "動画",
+    history: "生成履歴",
+    backToCreate: "作成へ戻る",
+    apiSettings: "API 設定",
+    close: "閉じる",
+    quickSkills: "クイックスキル",
+    model: "モデル",
+    connected: "接続済み",
+    needsKey: "API Key 必要",
+    apiConnected: "API 接続済み",
+    pendingConfig: "未設定",
+    connectApi: "API 接続",
+    prompt: "プロンプト",
+    polish: "改善",
+    imagePlaceholder: "主体、構図、光、素材、スタイルを記述",
+    videoPlaceholder: "主体、動き、カメラ、光、スタイルを記述",
+    aspectRatio: "比率",
+    quality: "品質",
+    duration: "時間",
+    seconds: "秒",
+    audio: "音声",
+    generateAudio: "音声生成",
+    unsupportedAudio: "非対応",
+    supplierQuota: "プロバイダー上限を使用",
+    referenceMode: "参照モード",
+    referenceFit: "比率調整",
+    referenceImages: "参照画像",
+    addImage: "画像追加",
+    referenceAssets: "参照素材",
+    generating: "生成中",
+    submitting: "送信中",
+    generateImage: "画像生成",
+    generateVideo: "動画生成"
+  },
+  ko: {
+    subtitle: "멀티 공급자 창작 패널",
+    image: "이미지",
+    video: "비디오",
+    history: "생성 기록",
+    backToCreate: "창작으로",
+    apiSettings: "API 설정",
+    close: "닫기",
+    quickSkills: "빠른 스킬",
+    model: "모델",
+    connected: "연결됨",
+    needsKey: "API Key 필요",
+    apiConnected: "API 연결됨",
+    pendingConfig: "미설정",
+    connectApi: "API 연결",
+    prompt: "프롬프트",
+    polish: "다듬기",
+    imagePlaceholder: "대상, 구도, 조명, 재질, 스타일을 설명하세요",
+    videoPlaceholder: "대상, 동작, 카메라 움직임, 조명, 스타일을 설명하세요",
+    aspectRatio: "비율",
+    quality: "품질",
+    duration: "시간",
+    seconds: "초",
+    audio: "오디오",
+    generateAudio: "오디오 생성",
+    unsupportedAudio: "지원 안 됨",
+    supplierQuota: "공급자 한도 사용",
+    referenceMode: "참조 모드",
+    referenceFit: "비율 맞춤",
+    referenceImages: "참조 이미지",
+    addImage: "이미지 추가",
+    referenceAssets: "참조 소재",
+    generating: "생성 중",
+    submitting: "제출 중",
+    generateImage: "이미지 생성",
+    generateVideo: "비디오 생성"
+  }
+};
 
 type GenerationHistoryRecord = {
   task: GenerationTask;
@@ -219,6 +412,8 @@ export function AgentSidebar({
   onClose
 }: AgentSidebarProps) {
   const { mode: appMode, user, getAccessToken } = useAuth();
+  const { language } = usePreferences();
+  const copy = agentCopyByLanguage[language];
   const supabase = useMemo(
     () => (appMode === "supabase" ? getSupabaseBrowserClient() : null),
     [appMode]
@@ -842,12 +1037,12 @@ export function AgentSidebar({
       <header className="flex h-12 items-center justify-between border-b border-slate-100 px-4">
         <div>
           <h2 className="text-sm font-semibold text-slate-900">Rufo Agent</h2>
-          <p className="text-[10px] text-slate-400">多供应商创作工作台</p>
+          <p className="text-[10px] text-slate-400">{copy.subtitle}</p>
         </div>
         <div className="flex items-center gap-1">
           <button
             type="button"
-            title={view === "history" ? "返回创作" : "生成历史"}
+            title={view === "history" ? copy.backToCreate : copy.history}
             onClick={() =>
               setView((current) => (current === "history" ? "create" : "history"))
             }
@@ -861,13 +1056,13 @@ export function AgentSidebar({
           </button>
           <button
             type="button"
-            title="自助接入 API"
+            title={copy.apiSettings}
             onClick={() => setSettingsOpen(true)}
             className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
           >
             <Settings2 className="h-4 w-4" aria-hidden="true" />
           </button>
-          <button type="button" title="关闭对话" onClick={onClose} className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100">
+          <button type="button" title={copy.close} onClick={onClose} className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100">
             <X className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
@@ -883,7 +1078,7 @@ export function AgentSidebar({
             className={mediaType === "image" ? "inline-flex h-9 items-center justify-center gap-2 rounded-md bg-white text-xs font-semibold text-slate-900 shadow-sm" : "inline-flex h-9 items-center justify-center gap-2 text-xs text-slate-500"}
           >
             <ImagePlus className="h-4 w-4" aria-hidden="true" />
-            图片
+            {copy.image}
           </button>
           <button
             type="button"
@@ -891,11 +1086,11 @@ export function AgentSidebar({
             className={mediaType === "video" ? "inline-flex h-9 items-center justify-center gap-2 rounded-md bg-white text-xs font-semibold text-slate-900 shadow-sm" : "inline-flex h-9 items-center justify-center gap-2 text-xs text-slate-500"}
           >
             <Film className="h-4 w-4" aria-hidden="true" />
-            视频
+            {copy.video}
           </button>
         </div>
 
-        <h3 className="mb-2 text-xs font-semibold text-slate-700">快捷 Skills</h3>
+        <h3 className="mb-2 text-xs font-semibold text-slate-700">{copy.quickSkills}</h3>
         <div className="mb-5 grid gap-2">
           {skillPresets
             .filter((preset) => preset.mediaType === mediaType)
@@ -917,7 +1112,7 @@ export function AgentSidebar({
 
         <form id="rufo-generation-form" onSubmit={handleSubmit} className="space-y-4">
           <label className="block">
-            <span className="mb-1 block text-xs font-medium text-slate-600">模型</span>
+            <span className="mb-1 block text-xs font-medium text-slate-600">{copy.model}</span>
             <select
               value={modelId}
               onChange={(event) => setModelId(event.target.value)}
@@ -925,7 +1120,7 @@ export function AgentSidebar({
             >
               {visibleModels.map((model) => (
                 <option key={model.id} value={model.id}>
-                  {model.label} · {model.available ? "已接入" : "需 API Key"}
+                  {model.label} · {model.available ? copy.connected : copy.needsKey}
                 </option>
               ))}
             </select>
@@ -933,7 +1128,7 @@ export function AgentSidebar({
               <div className="mt-2 flex items-start justify-between gap-2">
                 <p className="text-xs leading-5 text-slate-500">{selectedModel.description}</p>
                 <span className={selectedModel.available ? "shrink-0 rounded bg-emerald-50 px-2 py-1 text-[10px] font-semibold text-emerald-700" : "shrink-0 rounded bg-amber-50 px-2 py-1 text-[10px] font-semibold text-amber-700"}>
-                  {selectedModel.available ? "API 已接入" : "待配置"}
+                  {selectedModel.available ? copy.apiConnected : copy.pendingConfig}
                 </span>
               </div>
             ) : null}
@@ -950,7 +1145,7 @@ export function AgentSidebar({
                   onClick={() => setSettingsOpen(true)}
                   className="shrink-0 rounded bg-white px-2 py-1 font-semibold text-amber-800 shadow-sm hover:bg-amber-100"
                 >
-                  接入 API
+                  {copy.connectApi}
                 </button>
               </div>
             ) : null}
@@ -958,7 +1153,7 @@ export function AgentSidebar({
 
           <label className="block">
             <span className="mb-1 flex items-center justify-between gap-2">
-              <span className="text-xs font-medium text-slate-600">画面描述</span>
+              <span className="text-xs font-medium text-slate-600">{copy.prompt}</span>
               <button
                 type="button"
                 onClick={handlePolishPrompt}
@@ -970,7 +1165,7 @@ export function AgentSidebar({
                 ) : (
                   <WandSparkles className="h-3.5 w-3.5" aria-hidden="true" />
                 )}
-                润色
+                {copy.polish}
               </button>
             </span>
             <textarea
@@ -978,12 +1173,12 @@ export function AgentSidebar({
               value={prompt}
               onChange={(event) => setPrompt(event.target.value)}
               className="h-32 w-full resize-none rounded-lg border border-slate-200 p-3 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-slate-900"
-              placeholder={mediaType === "video" ? "描述主体、动作、镜头运动、光线和风格" : "描述主体、构图、光线、材质和风格"}
+              placeholder={mediaType === "video" ? copy.videoPlaceholder : copy.imagePlaceholder}
             />
           </label>
 
           <div>
-            <span className="mb-2 block text-xs font-medium text-slate-600">画面比例</span>
+            <span className="mb-2 block text-xs font-medium text-slate-600">{copy.aspectRatio}</span>
             <div className="grid grid-cols-4 gap-2">
               {aspectRatioPresets
                 .filter((preset) => selectedModel?.aspectRatios.includes(preset.value))
@@ -1010,7 +1205,7 @@ export function AgentSidebar({
           </div>
 
           <div>
-            <span className="mb-2 block text-xs font-medium text-slate-600">画质</span>
+            <span className="mb-2 block text-xs font-medium text-slate-600">{copy.quality}</span>
             <div className="grid grid-cols-3 rounded-lg bg-slate-100 p-1">
               {(["standard", "high", "ultra"] as const).map((option) => {
                 const supported = selectedModel?.qualityOptions.includes(option);
@@ -1037,19 +1232,19 @@ export function AgentSidebar({
           {mediaType === "video" ? (
             <div className="grid grid-cols-2 gap-3">
               <label className="block">
-                <span className="mb-1 block text-xs font-medium text-slate-600">时长</span>
+                <span className="mb-1 block text-xs font-medium text-slate-600">{copy.duration}</span>
                 <select
                   value={durationSeconds}
                   onChange={(event) => setDurationSeconds(Number(event.target.value))}
                   className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none"
                 >
                   {durationOptions.map((seconds) => (
-                    <option key={seconds} value={seconds}>{seconds} 秒</option>
+                    <option key={seconds} value={seconds}>{seconds} {copy.seconds}</option>
                   ))}
                 </select>
               </label>
               <div>
-                <span className="mb-1 block text-xs font-medium text-slate-600">音频</span>
+                <span className="mb-1 block text-xs font-medium text-slate-600">{copy.audio}</span>
                 <button
                   type="button"
                   disabled={!selectedModel?.supportsAudio}
@@ -1060,7 +1255,7 @@ export function AgentSidebar({
                       : "flex h-10 w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-500 disabled:opacity-40"
                   }
                 >
-                  <span>{selectedModel?.supportsAudio ? "生成音频" : "模型不支持"}</span>
+                  <span>{selectedModel?.supportsAudio ? copy.generateAudio : copy.unsupportedAudio}</span>
                   <span className={audio ? "h-4 w-7 rounded-full bg-white/25 p-0.5" : "h-4 w-7 rounded-full bg-slate-200 p-0.5"}>
                     <span className={audio ? "block h-3 w-3 translate-x-3 rounded-full bg-white" : "block h-3 w-3 rounded-full bg-white"} />
                   </span>
@@ -1069,7 +1264,7 @@ export function AgentSidebar({
             </div>
           ) : (
             <div className="flex h-10 items-center justify-between rounded-lg bg-emerald-50 px-3 text-xs font-semibold text-emerald-700">
-              <span>按供应商额度调用</span>
+              <span>{copy.supplierQuota}</span>
               <span>{resolveMediaDimensions("image", aspectRatio, quality).width} × {resolveMediaDimensions("image", aspectRatio, quality).height}</span>
             </div>
           )}
@@ -1077,7 +1272,7 @@ export function AgentSidebar({
           {selectedModel?.supportsReference ? (
             <div>
               <span className="mb-2 block text-xs font-medium text-slate-600">
-                参考模式
+                {copy.referenceMode}
               </span>
               <div className="grid grid-cols-2 gap-2">
                 {referenceModes.map((mode) => (
@@ -1107,7 +1302,7 @@ export function AgentSidebar({
             <div className="space-y-2">
               <div>
                 <span className="mb-2 block text-xs font-medium text-slate-600">
-                  比例适配
+                  {copy.referenceFit}
                 </span>
                 <div className="grid grid-cols-3 rounded-lg bg-slate-100 p-1">
                   {(["outpaint", "crop", "contain"] as const).map((fit) => (
@@ -1128,7 +1323,7 @@ export function AgentSidebar({
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium text-slate-600">
-                  参考图片
+                  {copy.referenceImages}
                 </span>
                 <span className="text-[10px] text-slate-400">
                   {referenceCount}/{maxReferenceImages}
@@ -1231,7 +1426,7 @@ export function AgentSidebar({
                     className="flex aspect-video items-center justify-center gap-2 rounded-md border border-dashed border-slate-300 bg-slate-50 text-xs font-medium text-slate-500 hover:border-slate-500 hover:text-slate-700"
                   >
                     <Plus className="h-4 w-4" aria-hidden="true" />
-                    添加图片
+                    {copy.addImage}
                   </button>
                 ) : null}
               </div>
@@ -1264,7 +1459,7 @@ export function AgentSidebar({
             ) : (
               <Upload className="h-4 w-4" aria-hidden="true" />
             )}
-            参考素材
+            {copy.referenceAssets}
           </button>
           <button
             form="rufo-generation-form"
@@ -1275,9 +1470,9 @@ export function AgentSidebar({
             {submitting ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <SendHorizontal className="h-4 w-4" aria-hidden="true" />}
             {submitting
               ? generationProgress !== null
-                ? `生成中 ${Math.round(generationProgress)}%`
-                : "正在提交"
-              : `生成${mediaType === "video" ? "视频" : "图片"}`}
+                ? `${copy.generating} ${Math.round(generationProgress)}%`
+                : copy.submitting
+              : mediaType === "video" ? copy.generateVideo : copy.generateImage}
           </button>
         </div>
       </div>

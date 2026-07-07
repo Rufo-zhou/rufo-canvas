@@ -28,6 +28,7 @@ import {
   Monitor,
   Moon,
   Plus,
+  Settings2,
   Sparkles,
   Star,
   Sun,
@@ -45,6 +46,8 @@ import {
   type RufoLanguage,
   type RufoThemeMode
 } from "@/components/settings/PreferencesProvider";
+import { ApiSettingsDialog } from "@/components/settings/ApiSettingsDialog";
+import type { ProviderCredentials } from "@/lib/media-generation/types";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
   createProject,
@@ -89,6 +92,8 @@ type ArenaCard = {
   title: string;
   description: string;
   prize: string;
+  action?: "api-settings" | "new-canvas" | "projects" | "tutorial";
+  buttonLabel?: string;
 };
 
 type WorkflowDetail = {
@@ -193,8 +198,8 @@ const copyByLanguage: Record<RufoLanguage, DashboardCopy> = {
     nav: {
       home: "主页",
       workspace: "工作空间",
-      tv: "流程工坊",
-      arena: "挑战计划",
+      tv: "创作工具",
+      arena: "快捷操作",
       templates: "模板库",
       freeTrial: "免费体验",
       logout: "退出"
@@ -215,8 +220,8 @@ const copyByLanguage: Record<RufoLanguage, DashboardCopy> = {
     },
     sections: {
       featured: "精选推荐",
-      explore: "Rufo 流程工坊",
-      arena: "Rufo 挑战计划",
+      explore: "创作工具台",
+      arena: "快捷操作",
       templates: "模板库",
       recent: "最近项目",
       allProjects: "全部项目",
@@ -322,22 +327,28 @@ const copyByLanguage: Record<RufoLanguage, DashboardCopy> = {
     ],
     arenaCards: [
       {
-        status: "进行中",
-        title: "全盘免费模型接入挑战",
-        description: "把可用免费图片与视频模型整理进一个自助 API 工作流。",
-        prize: "开放模型池 + 项目模板"
+        status: "模型",
+        title: "自助接入模型 API",
+        description: "填写 Pollinations、Hugging Face、Agnes 等 Key，立即启用更多图片和视频模型。",
+        prize: "打开 API 接入设置",
+        action: "api-settings",
+        buttonLabel: "配置 API"
       },
       {
-        status: "即将开始",
-        title: "无限画布短片周",
-        description: "使用首尾帧、参考图和节点续写完成一支 15 秒短片。",
-        prize: "视频生成积分池"
+        status: "画布",
+        title: "新建空白无限画布",
+        description: "不套用任何模板，直接进入干净画布，自己控制节点、比例、缩放和布局。",
+        prize: "创建一个空白项目",
+        action: "new-canvas",
+        buttonLabel: "新建画布"
       },
       {
-        status: "模板征集",
-        title: "品牌视觉模板库",
-        description: "沉淀电商、海报、社媒与产品广告可复用流程。",
-        prize: "精选到 Rufo 首页"
+        status: "学习",
+        title: "打开新手教程",
+        description: "查看登录、模型接入、参考图生成、框选打组、历史记录和导出的完整操作。",
+        prize: "随时可以重新打开",
+        action: "tutorial",
+        buttonLabel: "查看教程"
       }
     ],
     templateItems: [
@@ -355,8 +366,8 @@ const copyByLanguage: Record<RufoLanguage, DashboardCopy> = {
     nav: {
       home: "Home",
       workspace: "Workspace",
-      tv: "Workflow Lab",
-      arena: "Challenge Lab",
+      tv: "Creative Tools",
+      arena: "Quick Actions",
       templates: "Templates",
       freeTrial: "Try free",
       logout: "Sign out"
@@ -377,8 +388,8 @@ const copyByLanguage: Record<RufoLanguage, DashboardCopy> = {
     },
     sections: {
       featured: "Featured",
-      explore: "Rufo Workflow Lab",
-      arena: "Rufo Challenge Lab",
+      explore: "Creative tools",
+      arena: "Quick actions",
       templates: "Templates",
       recent: "Recent Projects",
       allProjects: "All Projects",
@@ -484,22 +495,28 @@ const copyByLanguage: Record<RufoLanguage, DashboardCopy> = {
     ],
     arenaCards: [
       {
-        status: "Live",
-        title: "Free model integration challenge",
-        description: "Organize free image and video models into a self-serve API workflow.",
-        prize: "Open model pool + project templates"
+        status: "Models",
+        title: "Connect model APIs",
+        description: "Add Pollinations, Hugging Face, Agnes, and other keys to unlock more image and video models.",
+        prize: "Open API settings",
+        action: "api-settings",
+        buttonLabel: "Configure API"
       },
       {
-        status: "Soon",
-        title: "Infinite canvas short-film week",
-        description: "Use first/last frames, references, and node continuation to finish a 15-second film.",
-        prize: "Video generation credit pool"
+        status: "Canvas",
+        title: "Create a blank canvas",
+        description: "Start from a clean infinite canvas and control nodes, aspect ratios, zoom, and layout yourself.",
+        prize: "Create a clean project",
+        action: "new-canvas",
+        buttonLabel: "New canvas"
       },
       {
-        status: "Templates",
-        title: "Brand visual template library",
-        description: "Collect reusable workflows for ecommerce, posters, social, and product ads.",
-        prize: "Featured on Rufo home"
+        status: "Guide",
+        title: "Open onboarding",
+        description: "Review login, API keys, reference generation, grouping, history, and export behavior.",
+        prize: "Available anytime",
+        action: "tutorial",
+        buttonLabel: "View guide"
       }
     ],
     templateItems: [
@@ -517,8 +534,8 @@ const copyByLanguage: Record<RufoLanguage, DashboardCopy> = {
     nav: {
       home: "ホーム",
       workspace: "ワークスペース",
-      tv: "ワークフローラボ",
-      arena: "チャレンジ",
+      tv: "作成ツール",
+      arena: "クイック操作",
       templates: "テンプレート",
       freeTrial: "無料で試す",
       logout: "ログアウト"
@@ -539,8 +556,8 @@ const copyByLanguage: Record<RufoLanguage, DashboardCopy> = {
     },
     sections: {
       featured: "おすすめ",
-      explore: "Rufo ワークフローラボ",
-      arena: "Rufo チャレンジ",
+      explore: "作成ツール",
+      arena: "クイック操作",
       templates: "テンプレート",
       recent: "最近のプロジェクト",
       allProjects: "すべてのプロジェクト",
@@ -646,22 +663,28 @@ const copyByLanguage: Record<RufoLanguage, DashboardCopy> = {
     ],
     arenaCards: [
       {
-        status: "開催中",
-        title: "無料モデル連携チャレンジ",
-        description: "無料画像・動画モデルをセルフサービス API ワークフローに整理します。",
-        prize: "オープンモデルプール + テンプレート"
+        status: "モデル",
+        title: "モデル API を接続",
+        description: "Pollinations、Hugging Face、Agnes などの Key を追加して画像・動画モデルを有効化します。",
+        prize: "API 設定を開く",
+        action: "api-settings",
+        buttonLabel: "API を設定"
       },
       {
-        status: "近日開始",
-        title: "無限キャンバス短編週間",
-        description: "首尾フレーム、参考画像、ノード継続で15秒動画を完成させます。",
-        prize: "動画生成クレジットプール"
+        status: "キャンバス",
+        title: "空白キャンバスを作成",
+        description: "テンプレートなしで、ノード、比率、ズーム、配置を自分で管理します。",
+        prize: "新しいプロジェクトを作成",
+        action: "new-canvas",
+        buttonLabel: "新規キャンバス"
       },
       {
-        status: "テンプレート",
-        title: "ブランドビジュアルテンプレート",
-        description: "EC、ポスター、SNS、広告向けの再利用ワークフローを蓄積します。",
-        prize: "Rufo ホームに掲載"
+        status: "ガイド",
+        title: "チュートリアルを開く",
+        description: "ログイン、API、参考画像、グループ化、履歴、エクスポートを確認します。",
+        prize: "いつでも再表示できます",
+        action: "tutorial",
+        buttonLabel: "ガイドを見る"
       }
     ],
     templateItems: [
@@ -679,8 +702,8 @@ const copyByLanguage: Record<RufoLanguage, DashboardCopy> = {
     nav: {
       home: "홈",
       workspace: "워크스페이스",
-      tv: "워크플로우 랩",
-      arena: "챌린지",
+      tv: "창작 도구",
+      arena: "빠른 작업",
       templates: "템플릿",
       freeTrial: "무료 체험",
       logout: "로그아웃"
@@ -701,8 +724,8 @@ const copyByLanguage: Record<RufoLanguage, DashboardCopy> = {
     },
     sections: {
       featured: "추천",
-      explore: "Rufo 워크플로우 랩",
-      arena: "Rufo 챌린지",
+      explore: "창작 도구",
+      arena: "빠른 작업",
       templates: "템플릿",
       recent: "최근 프로젝트",
       allProjects: "전체 프로젝트",
@@ -808,22 +831,28 @@ const copyByLanguage: Record<RufoLanguage, DashboardCopy> = {
     ],
     arenaCards: [
       {
-        status: "진행 중",
-        title: "무료 모델 연동 챌린지",
-        description: "무료 이미지와 영상 모델을 셀프 API 워크플로우로 정리합니다.",
-        prize: "오픈 모델 풀 + 프로젝트 템플릿"
+        status: "모델",
+        title: "모델 API 연결",
+        description: "Pollinations, Hugging Face, Agnes 등의 Key를 추가해 이미지와 영상 모델을 활성화합니다.",
+        prize: "API 설정 열기",
+        action: "api-settings",
+        buttonLabel: "API 설정"
       },
       {
-        status: "곧 시작",
-        title: "무한 캔버스 단편 주간",
-        description: "첫/마지막 프레임, 레퍼런스, 노드 이어 만들기로 15초 영상을 완성합니다.",
-        prize: "영상 생성 크레딧 풀"
+        status: "캔버스",
+        title: "빈 캔버스 만들기",
+        description: "템플릿 없이 노드, 비율, 줌, 레이아웃을 직접 제어합니다.",
+        prize: "깨끗한 프로젝트 생성",
+        action: "new-canvas",
+        buttonLabel: "새 캔버스"
       },
       {
-        status: "템플릿",
-        title: "브랜드 비주얼 템플릿",
-        description: "이커머스, 포스터, 소셜, 제품 광고 워크플로우를 축적합니다.",
-        prize: "Rufo 홈에 소개"
+        status: "가이드",
+        title: "튜토리얼 열기",
+        description: "로그인, API, 레퍼런스 생성, 그룹, 기록, 내보내기를 확인합니다.",
+        prize: "언제든 다시 열 수 있습니다",
+        action: "tutorial",
+        buttonLabel: "가이드 보기"
       }
     ],
     templateItems: [
@@ -860,7 +889,7 @@ const workflowCopyByLanguage: Record<RufoLanguage, WorkflowCopy> = {
     promptApplied: "已填入创作输入框，可继续编辑或直接开始。",
     featuredPrefix: "请基于这个 Rufo 原创工作流创建一个可执行的无限画布项目：",
     templatePrefix: "请使用这个 Rufo 模板启动一个可复用的创作项目：",
-    challengePrefix: "请基于这个 Rufo 挑战计划创建项目：",
+    challengePrefix: "请基于这个 Rufo 快捷操作创建项目：",
     promptSuffix: "请拆解为首批节点、参考图策略、推荐比例、图片/视频模型选择、失败替代方案和后续迭代路径。",
     steps: [
       "在画布中心建立目标节点，写清楚风格、比例、使用场景和交付格式。",
@@ -894,7 +923,7 @@ const workflowCopyByLanguage: Record<RufoLanguage, WorkflowCopy> = {
     promptApplied: "Prompt added to the composer. You can edit it or start now.",
     featuredPrefix: "Create an executable Rufo infinite-canvas project from this original workflow:",
     templatePrefix: "Start a reusable Rufo creative project with this template:",
-    challengePrefix: "Create a Rufo project from this challenge plan:",
+    challengePrefix: "Create a Rufo project from this quick action:",
     promptSuffix: "Break it into first nodes, reference strategy, recommended aspect ratios, image/video model choices, fallback prompts, and follow-up iterations.",
     steps: [
       "Create a goal node with style, aspect ratio, use case, and delivery format.",
@@ -928,7 +957,7 @@ const workflowCopyByLanguage: Record<RufoLanguage, WorkflowCopy> = {
     promptApplied: "作成欄に入力しました。編集してから開始できます。",
     featuredPrefix: "この Rufo オリジナルワークフローから実行可能な無限キャンバスプロジェクトを作成してください：",
     templatePrefix: "この Rufo テンプレートで再利用可能な制作プロジェクトを開始してください：",
-    challengePrefix: "この Rufo チャレンジ計画からプロジェクトを作成してください：",
+    challengePrefix: "この Rufo クイック操作からプロジェクトを作成してください：",
     promptSuffix: "初期ノード、参考素材戦略、推奨比率、画像/動画モデル、失敗時の代替案、次の反復手順に分解してください。",
     steps: [
       "目的ノードを作り、スタイル、比率、用途、納品形式を明確にする。",
@@ -962,7 +991,7 @@ const workflowCopyByLanguage: Record<RufoLanguage, WorkflowCopy> = {
     promptApplied: "입력창에 넣었습니다. 수정하거나 바로 시작할 수 있습니다.",
     featuredPrefix: "이 Rufo 오리지널 워크플로우를 기반으로 실행 가능한 무한 캔버스 프로젝트를 만드세요:",
     templatePrefix: "이 Rufo 템플릿으로 재사용 가능한 창작 프로젝트를 시작하세요:",
-    challengePrefix: "이 Rufo 챌린지 계획으로 프로젝트를 만드세요:",
+    challengePrefix: "이 Rufo 빠른 작업으로 프로젝트를 만드세요:",
     promptSuffix: "첫 노드, 레퍼런스 전략, 추천 비율, 이미지/영상 모델, 실패 대안, 후속 반복 경로로 나눠주세요.",
     steps: [
       "목표 노드를 만들고 스타일, 비율, 사용 목적, 납품 형식을 명확히 합니다.",
@@ -1009,6 +1038,8 @@ function ProjectDashboardContent({ mode }: ProjectDashboardProps) {
   const [error, setError] = useState<string | null>(null);
   const [status, setStatus] = useState<string | null>(null);
   const [activeWorkflow, setActiveWorkflow] = useState<WorkflowDetail | null>(null);
+  const [apiSettingsOpen, setApiSettingsOpen] = useState(false);
+  const [, setProviderCredentials] = useState<ProviderCredentials>({});
 
   const refreshProjects = useCallback(async () => {
     setLoading(true);
@@ -1139,8 +1170,32 @@ function ProjectDashboardContent({ mode }: ProjectDashboardProps) {
     await createProjectFromPrompt(workflow.prompt, workflow.title);
   }
 
+  async function runArenaAction(card: ArenaCard, index: number) {
+    if (card.action === "api-settings") {
+      setApiSettingsOpen(true);
+      return;
+    }
+
+    if (card.action === "new-canvas") {
+      await createProjectFromPrompt("", copy.projects.defaultName);
+      return;
+    }
+
+    if (card.action === "projects") {
+      router.push("/projects");
+      return;
+    }
+
+    if (card.action === "tutorial") {
+      openRufoOnboarding();
+      return;
+    }
+
+    await startWorkflow(buildArenaWorkflow(workflowCopy, card, index));
+  }
+
   return (
-    <main className="rufo-home-grid min-h-screen overflow-x-hidden text-[color:var(--rufo-home-fg)]">
+    <main className="rufo-route-enter rufo-home-grid min-h-screen overflow-x-hidden text-[color:var(--rufo-home-fg)]">
       <header className="sticky top-0 z-40 border-b border-[color:var(--rufo-home-border)] bg-[color:var(--rufo-home-glass)] px-4 py-3 backdrop-blur-xl sm:px-7">
         <div className="mx-auto flex max-w-[1480px] items-center justify-between gap-4">
           <Link href="/" className="flex items-center gap-3">
@@ -1159,10 +1214,10 @@ function ProjectDashboardContent({ mode }: ProjectDashboardProps) {
             <NavLink active={mode === "projects"} href="/projects" icon={Grid3X3}>
               {copy.nav.workspace}
             </NavLink>
-            <NavLink href="#explore" icon={Film}>
+            <NavLink href="#tools" icon={Film}>
               {copy.nav.tv}
             </NavLink>
-            <NavLink href="#arena" icon={Trophy}>
+            <NavLink href="#actions" icon={Trophy}>
               {copy.nav.arena}
             </NavLink>
           </nav>
@@ -1316,7 +1371,7 @@ function ProjectDashboardContent({ mode }: ProjectDashboardProps) {
           </HomeSection>
 
           <HomeSection
-            id="explore"
+            id="tools"
             title={copy.sections.explore}
             actionLabel={copy.sections.enterCanvas}
             actionHref="/projects"
@@ -1341,7 +1396,7 @@ function ProjectDashboardContent({ mode }: ProjectDashboardProps) {
           </HomeSection>
 
           <HomeSection
-            id="arena"
+            id="actions"
             title={copy.sections.arena}
             actionLabel={copy.sections.newProject}
             actionHref="/projects"
@@ -1355,9 +1410,7 @@ function ProjectDashboardContent({ mode }: ProjectDashboardProps) {
                   onOpen={() =>
                     openWorkflow(buildArenaWorkflow(workflowCopy, card, index))
                   }
-                  onStart={() =>
-                    void startWorkflow(buildArenaWorkflow(workflowCopy, card, index))
-                  }
+                  onStart={() => void runArenaAction(card, index)}
                 />
               ))}
             </div>
@@ -1442,6 +1495,12 @@ function ProjectDashboardContent({ mode }: ProjectDashboardProps) {
           onStart={() => void startWorkflow(activeWorkflow)}
         />
       ) : null}
+
+      <ApiSettingsDialog
+        open={apiSettingsOpen}
+        onClose={() => setApiSettingsOpen(false)}
+        onChange={setProviderCredentials}
+      />
 
       <footer className="mx-auto flex max-w-[1480px] flex-col gap-2 px-4 py-10 text-xs text-[color:var(--rufo-home-soft)] sm:px-7 md:flex-row md:items-center md:justify-between">
         <span>{copy.footer.name}</span>
@@ -1678,13 +1737,22 @@ function ArenaCardView({
   onOpen: () => void;
   onStart: () => void;
 }) {
+  const ActionIcon =
+    card.action === "api-settings"
+      ? Settings2
+      : card.action === "tutorial"
+        ? BookOpen
+        : card.action === "new-canvas"
+          ? Plus
+          : Clock3;
+
   return (
-    <article className="min-h-56 rounded-xl border border-[color:var(--rufo-home-border)] bg-[color:var(--rufo-home-card)] p-5 shadow-xl shadow-[color:var(--rufo-home-shadow)]">
+    <article className="group min-h-56 rounded-xl border border-[color:var(--rufo-home-border)] bg-[color:var(--rufo-home-card)] p-5 shadow-xl shadow-[color:var(--rufo-home-shadow)] transition duration-300 hover:-translate-y-1 hover:bg-[color:var(--rufo-home-card-hover)]">
       <span className="inline-flex items-center gap-2 rounded-full bg-emerald-400/12 px-3 py-1 text-xs font-semibold text-emerald-500">
-        <Clock3 className="h-3.5 w-3.5" aria-hidden="true" />
+        <ActionIcon className="h-3.5 w-3.5" aria-hidden="true" />
         {card.status}
       </span>
-      <h3 className="mt-20 text-lg font-semibold text-[color:var(--rufo-home-fg)]">{card.title}</h3>
+      <h3 className="mt-16 text-lg font-semibold text-[color:var(--rufo-home-fg)]">{card.title}</h3>
       <p className="mt-3 text-sm leading-6 text-[color:var(--rufo-home-muted)]">{card.description}</p>
       <p className="mt-4 text-sm font-semibold text-[color:var(--rufo-home-accent)]">{card.prize}</p>
       <div className="mt-5 flex flex-wrap gap-2">
@@ -1700,7 +1768,7 @@ function ArenaCardView({
           onClick={onStart}
           className="h-9 rounded-full bg-[color:var(--rufo-home-primary)] px-3 text-xs font-semibold text-[color:var(--rufo-home-primary-fg)] hover:opacity-90"
         >
-          {workflowCopy.startCanvas}
+          {card.buttonLabel ?? workflowCopy.startCanvas}
         </button>
       </div>
     </article>

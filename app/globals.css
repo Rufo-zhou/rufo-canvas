@@ -110,12 +110,44 @@ select {
   animation: rufoHomeFadeIn 520ms ease both;
 }
 
+.rufo-route-enter {
+  animation: rufoRouteEnter 420ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
 .rufo-float-label {
   animation: rufoFloatLabel 5.8s ease-in-out infinite;
 }
 
 .rufo-home-composer {
   box-shadow: 0 24px 80px var(--rufo-home-shadow);
+  transition:
+    border-color 180ms ease,
+    box-shadow 220ms ease,
+    transform 220ms ease;
+}
+
+.rufo-home-composer:focus-within {
+  border-color: color-mix(in srgb, var(--rufo-home-accent) 42%, var(--rufo-home-border));
+  box-shadow:
+    0 26px 90px var(--rufo-home-shadow),
+    0 0 0 4px color-mix(in srgb, var(--rufo-home-accent) 16%, transparent);
+  transform: translateY(-1px);
+}
+
+.rufo-home-grid button,
+.rufo-canvas button {
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    opacity 160ms ease,
+    transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.rufo-home-grid button:active,
+.rufo-canvas button:active {
+  transform: translateY(1px) scale(0.98);
 }
 
 .rufo-hide-scrollbar {
@@ -250,6 +282,20 @@ html[data-rufo-theme="dark"] .rufo-canvas .bg-black\/75 {
   }
 }
 
+@keyframes rufoRouteEnter {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.996);
+    filter: saturate(0.92);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: saturate(1);
+  }
+}
+
 @keyframes rufoFloatLabel {
   0%,
   100% {
@@ -263,6 +309,7 @@ html[data-rufo-theme="dark"] .rufo-canvas .bg-black\/75 {
 
 @media (prefers-reduced-motion: reduce) {
   .rufo-home-fade-in,
+  .rufo-route-enter,
   .rufo-float-label,
   .rufo-generation-scan,
   .rufo-generation-orbit,

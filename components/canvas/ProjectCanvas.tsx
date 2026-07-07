@@ -42,18 +42,22 @@ import {
   HelpCircle,
   ImagePlus,
   Layers,
+  Languages,
   Loader2,
   MapPin,
   Maximize2,
   MessageCircle,
   Minus,
+  Monitor,
   MousePointer2,
+  Moon,
   PenLine,
   Plus,
   Redo2,
   Save,
   Share2,
   Square,
+  Sun,
   Trash2,
   Type,
   Undo2,
@@ -65,6 +69,11 @@ import {
 import { AuthGate } from "@/components/auth/AuthGate";
 import { UserMenu } from "@/components/auth/UserMenu";
 import { useAuth } from "@/components/auth/AuthProvider";
+import {
+  usePreferences,
+  type RufoLanguage,
+  type RufoThemeMode
+} from "@/components/settings/PreferencesProvider";
 import { getSupabaseBrowserClient } from "@/lib/supabase/client";
 import {
   getLocalProject,
@@ -142,6 +151,161 @@ type ModelCatalogItem = {
   description?: string;
 };
 
+type AutosaveState = "saved" | "saving" | "dirty" | "error";
+
+type CanvasCopy = {
+  tools: Record<CanvasTool, string>;
+  theme: Record<RufoThemeMode, string> & { theme: string; language: string };
+  topbar: {
+    back: string;
+    projectName: string;
+    editProjectName: string;
+    saveProjectName: string;
+    save: string;
+    saving: string;
+    uploading: string;
+    help: string;
+    share: string;
+    exportJson: string;
+    modelStatus: string;
+    multiModel: string;
+  };
+  autosave: Record<AutosaveState, string>;
+  status: {
+    renamed: string;
+    exported: string;
+    copied: string;
+    copyFailed: string;
+    generationAdded: string;
+    imageAdded: string;
+    videoAdded: string;
+    saved: string;
+  };
+  errors: { loadCanvas: string; autoSave: string; save: string; rename: string };
+  canvas: {
+    loading: string;
+    empty: string;
+    zoomOut: string;
+    zoomIn: string;
+    fitView: string;
+    minimap: string;
+    layers: string;
+    assets: string;
+    undo: string;
+    redo: string;
+  };
+  selection: {
+    selected: string;
+    copy: string;
+    group: string;
+    ungroup: string;
+    delete: string;
+  };
+  panels: {
+    close: string;
+    layers: string;
+    assets: string;
+    empty: string;
+    show: string;
+    hide: string;
+    download: string;
+    delete: string;
+  };
+  share: {
+    title: string;
+    copyLink: string;
+    copied: string;
+    copyError: string;
+    exportJson: string;
+    body: (projectName: string) => string;
+  };
+  help: {
+    title: string;
+    body: string;
+    items: Array<[string, string]>;
+  };
+  models: {
+    title: string;
+    loading: string;
+    error: string;
+    available: string;
+    needKey: string;
+    image: string;
+    video: string;
+    ratio: string;
+    quality: string;
+    duration: string;
+    openAgent: string;
+    summary: (total: number, available: number, image: number, video: number) => string;
+  };
+};
+
+const canvasCopyByLanguage: Record<RufoLanguage, CanvasCopy> = {
+  "zh-CN": {
+    tools: { select: "选择", marker: "标记", image: "素材", grid: "网格", frame: "画框", draw: "绘制", text: "文字", generate: "生成", upload: "上传", chat: "对话" },
+    theme: { theme: "主题", language: "语言", system: "跟随系统", light: "日间", dark: "夜间" },
+    topbar: { back: "返回项目", projectName: "项目名称", editProjectName: "编辑项目名称", saveProjectName: "保存项目名称", save: "保存", saving: "保存中", uploading: "正在上传...", help: "画布帮助", share: "分享项目", exportJson: "导出画布 JSON", modelStatus: "模型与额度", multiModel: "多模型" },
+    autosave: { saved: "已自动保存", saving: "自动保存中", dirty: "有未保存更改", error: "自动保存失败" },
+    status: { renamed: "项目名称已更新", exported: "画布 JSON 已导出", copied: "项目链接已复制", copyFailed: "项目链接复制失败，请手动复制浏览器地址栏链接。", generationAdded: "生成任务已添加到画布", imageAdded: "图片已添加到画布", videoAdded: "视频已添加到画布", saved: "已保存" },
+    errors: { loadCanvas: "画布加载失败。", autoSave: "自动保存失败。", save: "保存失败。", rename: "项目重命名失败。" },
+    canvas: { loading: "正在加载画布", empty: "输入想法生成图片或视频，也可以从底部工具栏添加内容", zoomOut: "缩小", zoomIn: "放大", fitView: "适配全部内容", minimap: "导航缩略图", layers: "图层", assets: "资产", undo: "撤销", redo: "重做" },
+    selection: { selected: "已选", copy: "复制", group: "打组", ungroup: "取消打组", delete: "删除" },
+    panels: { close: "关闭", layers: "图层", assets: "媒体资产", empty: "暂无内容", show: "显示", hide: "隐藏", download: "下载", delete: "删除" },
+    share: { title: "分享与导出", copyLink: "复制项目链接", copied: "已复制项目链接。", copyError: "复制失败，请手动复制浏览器地址栏链接。", exportJson: "导出画布 JSON", body: (projectName) => `${projectName} 的链接可复制给有权限的用户，画布 JSON 可用于备份或迁移。` },
+    help: { title: "画布操作帮助", body: "这些操作都已经接入当前 Rufo 画布，不是静态说明。", items: [["框选多个节点", "在画布空白处拖拽，选中后可复制、删除、打组或取消打组。"], ["移动画布", "按住空格拖拽，或使用鼠标中键/右键拖动画布。"], ["继续生成", "选中图片或视频后点击闪光按钮，或从节点两侧拖出连接线。"], ["上传素材", "底部上传按钮支持图片和视频，上传后会作为可拖动节点。"], ["历史记录", "右侧 Agent 顶部时钟按钮可查看生成历史和失败原因。"], ["快捷键", "Delete 删除，Cmd/Ctrl+Z 撤销，Shift+Cmd/Ctrl+Z 重做，Cmd/Ctrl+D 复制。"]] },
+    models: { title: "模型与额度状态", loading: "正在读取模型状态", error: "模型状态加载失败，请稍后重试。", available: "可用", needKey: "需 Key", image: "图片", video: "视频", ratio: "比例", quality: "画质", duration: "时长", openAgent: "打开 Agent 设置", summary: (total, available, image, video) => `当前模型池：${total || "-"} 个模型，${available || 0} 个可直接使用，图片 ${image || 0} 个，视频 ${video || 0} 个。` }
+  },
+  en: {
+    tools: { select: "Select", marker: "Pin", image: "Assets", grid: "Grid", frame: "Frame", draw: "Draw", text: "Text", generate: "Generate", upload: "Upload", chat: "Agent" },
+    theme: { theme: "Theme", language: "Language", system: "System", light: "Light", dark: "Dark" },
+    topbar: { back: "Back to projects", projectName: "Project name", editProjectName: "Edit project name", saveProjectName: "Save project name", save: "Save", saving: "Saving", uploading: "Uploading...", help: "Canvas help", share: "Share project", exportJson: "Export canvas JSON", modelStatus: "Models and quota", multiModel: "Multi-model" },
+    autosave: { saved: "Autosaved", saving: "Autosaving", dirty: "Unsaved changes", error: "Autosave failed" },
+    status: { renamed: "Project name updated", exported: "Canvas JSON exported", copied: "Project link copied", copyFailed: "Failed to copy the link. Copy the browser URL manually.", generationAdded: "Generation task added to canvas", imageAdded: "Image added to canvas", videoAdded: "Video added to canvas", saved: "Saved" },
+    errors: { loadCanvas: "Failed to load canvas.", autoSave: "Autosave failed.", save: "Save failed.", rename: "Failed to rename project." },
+    canvas: { loading: "Loading canvas", empty: "Enter an idea to generate images or videos, or add content from the bottom toolbar.", zoomOut: "Zoom out", zoomIn: "Zoom in", fitView: "Fit all content", minimap: "Minimap", layers: "Layers", assets: "Assets", undo: "Undo", redo: "Redo" },
+    selection: { selected: "Selected", copy: "Copy", group: "Group", ungroup: "Ungroup", delete: "Delete" },
+    panels: { close: "Close", layers: "Layers", assets: "Media assets", empty: "No content", show: "Show", hide: "Hide", download: "Download", delete: "Delete" },
+    share: { title: "Share and export", copyLink: "Copy project link", copied: "Project link copied.", copyError: "Copy failed. Copy the browser URL manually.", exportJson: "Export canvas JSON", body: (projectName) => `Copy the ${projectName} link for permitted users, or export JSON for backup and migration.` },
+    help: { title: "Canvas help", body: "These are active Rufo canvas operations, not static descriptions.", items: [["Box-select nodes", "Drag on empty canvas space, then copy, delete, group, or ungroup the selection."], ["Move the canvas", "Hold Space and drag, or use middle/right mouse drag."], ["Continue generation", "Select media and use the sparkle action, or drag connections from node sides."], ["Upload media", "Use the upload tool for images and videos; uploads become draggable nodes."], ["History", "Use the Agent history button to review tasks and failure reasons."], ["Shortcuts", "Delete removes, Cmd/Ctrl+Z undoes, Shift+Cmd/Ctrl+Z redoes, Cmd/Ctrl+D duplicates."]] },
+    models: { title: "Models and quota", loading: "Reading model status", error: "Failed to load model status. Try again later.", available: "Ready", needKey: "Needs key", image: "Image", video: "Video", ratio: "Ratio", quality: "Quality", duration: "Duration", openAgent: "Open Agent settings", summary: (total, available, image, video) => `Model pool: ${total || "-"} models, ${available || 0} ready, ${image || 0} image, ${video || 0} video.` }
+  },
+  ja: {
+    tools: { select: "選択", marker: "マーク", image: "素材", grid: "グリッド", frame: "フレーム", draw: "描画", text: "テキスト", generate: "生成", upload: "アップロード", chat: "Agent" },
+    theme: { theme: "テーマ", language: "言語", system: "システム", light: "ライト", dark: "ダーク" },
+    topbar: { back: "プロジェクトへ戻る", projectName: "プロジェクト名", editProjectName: "名前を編集", saveProjectName: "名前を保存", save: "保存", saving: "保存中", uploading: "アップロード中...", help: "ヘルプ", share: "共有", exportJson: "JSON書き出し", modelStatus: "モデルと上限", multiModel: "マルチモデル" },
+    autosave: { saved: "自動保存済み", saving: "自動保存中", dirty: "未保存の変更", error: "自動保存失敗" },
+    status: { renamed: "プロジェクト名を更新しました", exported: "キャンバス JSON を書き出しました", copied: "リンクをコピーしました", copyFailed: "リンクをコピーできません。ブラウザの URL を手動でコピーしてください。", generationAdded: "生成タスクを追加しました", imageAdded: "画像を追加しました", videoAdded: "動画を追加しました", saved: "保存しました" },
+    errors: { loadCanvas: "キャンバスを読み込めませんでした。", autoSave: "自動保存に失敗しました。", save: "保存に失敗しました。", rename: "名前の変更に失敗しました。" },
+    canvas: { loading: "キャンバスを読み込み中", empty: "アイデアを入力して画像や動画を生成するか、下部ツールバーから追加してください。", zoomOut: "縮小", zoomIn: "拡大", fitView: "全体を表示", minimap: "ミニマップ", layers: "レイヤー", assets: "素材", undo: "元に戻す", redo: "やり直し" },
+    selection: { selected: "選択済み", copy: "コピー", group: "グループ化", ungroup: "解除", delete: "削除" },
+    panels: { close: "閉じる", layers: "レイヤー", assets: "メディア素材", empty: "内容なし", show: "表示", hide: "非表示", download: "ダウンロード", delete: "削除" },
+    share: { title: "共有と書き出し", copyLink: "リンクをコピー", copied: "リンクをコピーしました。", copyError: "コピーできません。URL を手動でコピーしてください。", exportJson: "JSON書き出し", body: (projectName) => `${projectName} のリンクを共有し、JSON はバックアップや移行に使えます。` },
+    help: { title: "キャンバス操作", body: "これらは Rufo キャンバスに実装済みの操作です。", items: [["複数ノード選択", "空白部分をドラッグし、コピー、削除、グループ化、解除ができます。"], ["キャンバス移動", "Space を押しながらドラッグ、または中/右クリックで移動します。"], ["継続生成", "メディアを選択してスパーク操作、またはノード横から接続をドラッグします。"], ["素材アップロード", "画像と動画をアップロードするとドラッグ可能なノードになります。"], ["履歴", "Agent の履歴ボタンでタスクと失敗理由を確認できます。"], ["ショートカット", "Delete 削除、Cmd/Ctrl+Z 元に戻す、Shift+Cmd/Ctrl+Z やり直し、Cmd/Ctrl+D 複製。"]] },
+    models: { title: "モデルと上限", loading: "モデル状態を読み込み中", error: "モデル状態を読み込めません。", available: "利用可", needKey: "Key 必要", image: "画像", video: "動画", ratio: "比率", quality: "品質", duration: "時間", openAgent: "Agent 設定を開く", summary: (total, available, image, video) => `モデル数：${total || "-"}、利用可能 ${available || 0}、画像 ${image || 0}、動画 ${video || 0}。` }
+  },
+  ko: {
+    tools: { select: "선택", marker: "마커", image: "소재", grid: "그리드", frame: "프레임", draw: "그리기", text: "텍스트", generate: "생성", upload: "업로드", chat: "Agent" },
+    theme: { theme: "테마", language: "언어", system: "시스템", light: "라이트", dark: "다크" },
+    topbar: { back: "프로젝트로 돌아가기", projectName: "프로젝트 이름", editProjectName: "이름 편집", saveProjectName: "이름 저장", save: "저장", saving: "저장 중", uploading: "업로드 중...", help: "도움말", share: "공유", exportJson: "JSON 내보내기", modelStatus: "모델 및 한도", multiModel: "멀티 모델" },
+    autosave: { saved: "자동 저장됨", saving: "자동 저장 중", dirty: "저장되지 않음", error: "자동 저장 실패" },
+    status: { renamed: "프로젝트 이름이 업데이트되었습니다", exported: "캔버스 JSON을 내보냈습니다", copied: "링크를 복사했습니다", copyFailed: "링크 복사 실패. 브라우저 주소를 직접 복사하세요.", generationAdded: "생성 작업을 캔버스에 추가했습니다", imageAdded: "이미지를 캔버스에 추가했습니다", videoAdded: "비디오를 캔버스에 추가했습니다", saved: "저장됨" },
+    errors: { loadCanvas: "캔버스를 불러오지 못했습니다.", autoSave: "자동 저장에 실패했습니다.", save: "저장에 실패했습니다.", rename: "프로젝트 이름 변경에 실패했습니다." },
+    canvas: { loading: "캔버스 불러오는 중", empty: "아이디어를 입력해 이미지나 영상을 생성하거나 하단 도구에서 콘텐츠를 추가하세요.", zoomOut: "축소", zoomIn: "확대", fitView: "전체 맞춤", minimap: "미니맵", layers: "레이어", assets: "자산", undo: "실행 취소", redo: "다시 실행" },
+    selection: { selected: "선택됨", copy: "복사", group: "그룹", ungroup: "그룹 해제", delete: "삭제" },
+    panels: { close: "닫기", layers: "레이어", assets: "미디어 자산", empty: "콘텐츠 없음", show: "표시", hide: "숨기기", download: "다운로드", delete: "삭제" },
+    share: { title: "공유 및 내보내기", copyLink: "링크 복사", copied: "링크를 복사했습니다.", copyError: "복사 실패. 브라우저 주소를 직접 복사하세요.", exportJson: "JSON 내보내기", body: (projectName) => `${projectName} 링크를 공유하고 JSON은 백업 또는 이전에 사용할 수 있습니다.` },
+    help: { title: "캔버스 도움말", body: "이 작업들은 Rufo 캔버스에 실제로 연결되어 있습니다.", items: [["여러 노드 선택", "빈 캔버스에서 드래그해 선택한 뒤 복사, 삭제, 그룹, 그룹 해제가 가능합니다."], ["캔버스 이동", "Space를 누른 채 드래그하거나 가운데/오른쪽 버튼으로 이동합니다."], ["이어 생성", "미디어를 선택해 스파크 작업을 쓰거나 노드 양쪽에서 연결을 끌어냅니다."], ["소재 업로드", "이미지와 영상을 업로드하면 드래그 가능한 노드가 됩니다."], ["기록", "Agent 기록 버튼에서 작업과 실패 이유를 확인합니다."], ["단축키", "Delete 삭제, Cmd/Ctrl+Z 실행 취소, Shift+Cmd/Ctrl+Z 다시 실행, Cmd/Ctrl+D 복제."]] },
+    models: { title: "모델 및 한도", loading: "모델 상태 읽는 중", error: "모델 상태를 불러오지 못했습니다.", available: "사용 가능", needKey: "Key 필요", image: "이미지", video: "비디오", ratio: "비율", quality: "품질", duration: "시간", openAgent: "Agent 설정 열기", summary: (total, available, image, video) => `모델 풀: ${total || "-"}개, 사용 가능 ${available || 0}개, 이미지 ${image || 0}개, 비디오 ${video || 0}개.` }
+  }
+};
+
+const canvasLanguageLabels: Record<RufoLanguage, string> = {
+  "zh-CN": "中文",
+  en: "EN",
+  ja: "日本語",
+  ko: "한국어"
+};
+
 const nodeTypes = {
   imageAsset: ImageAssetNode,
   canvasElement: CanvasElementNode,
@@ -149,17 +313,17 @@ const nodeTypes = {
 } satisfies NodeTypes;
 
 const canvasTools = [
-  { id: "select", label: "选择", icon: MousePointer2 },
-  { id: "marker", label: "标记", icon: MapPin },
-  { id: "image", label: "素材", icon: ImagePlus },
-  { id: "grid", label: "网格", icon: Grid3X3 },
-  { id: "frame", label: "画框", icon: Square },
-  { id: "draw", label: "绘制", icon: PenLine },
-  { id: "text", label: "文字", icon: Type },
-  { id: "generate", label: "生成", icon: WandSparkles },
-  { id: "upload", label: "上传", icon: Upload },
-  { id: "chat", label: "对话", icon: MessageCircle }
-] satisfies Array<{ id: CanvasTool; label: string; icon: typeof MousePointer2 }>;
+  { id: "select", icon: MousePointer2 },
+  { id: "marker", icon: MapPin },
+  { id: "image", icon: ImagePlus },
+  { id: "grid", icon: Grid3X3 },
+  { id: "frame", icon: Square },
+  { id: "draw", icon: PenLine },
+  { id: "text", icon: Type },
+  { id: "generate", icon: WandSparkles },
+  { id: "upload", icon: Upload },
+  { id: "chat", icon: MessageCircle }
+] satisfies Array<{ id: CanvasTool; icon: typeof MousePointer2 }>;
 
 export function ProjectCanvas({ projectId, initialPrompt }: ProjectCanvasProps) {
   return (
@@ -171,6 +335,8 @@ export function ProjectCanvas({ projectId, initialPrompt }: ProjectCanvasProps) 
 
 function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) {
   const { mode: appMode, user } = useAuth();
+  const { themeMode, language, setThemeMode, setLanguage } = usePreferences();
+  const copy = canvasCopyByLanguage[language];
   const supabase = useMemo(
     () => (appMode === "supabase" ? getSupabaseBrowserClient() : null),
     [appMode]
@@ -193,6 +359,7 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
   const [viewport, setViewport] = useState<Viewport | undefined>();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [autosaveState, setAutosaveState] = useState<AutosaveState>("saved");
   const [uploading, setUploading] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -232,6 +399,7 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
         changes.some((change) => change.type !== "select")
       ) {
         dirtyRef.current = true;
+        setAutosaveState("dirty");
       }
       onNodesChange(changes);
     },
@@ -245,6 +413,7 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
         changes.some((change) => change.type !== "select")
       ) {
         dirtyRef.current = true;
+        setAutosaveState("dirty");
       }
       onEdgesChange(changes);
     },
@@ -277,6 +446,7 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
   const recordHistory = useCallback(
     (snapshot?: CanvasHistoryEntry) => {
       dirtyRef.current = true;
+      setAutosaveState("dirty");
       const entry = snapshot ?? {
         nodes: structuredClone(nodesRef.current),
         edges: structuredClone(edgesRef.current)
@@ -444,7 +614,7 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
         }
       } catch (caughtError) {
         if (mounted) {
-          setError(caughtError instanceof Error ? caughtError.message : "画布加载失败。");
+          setError(caughtError instanceof Error ? caughtError.message : copy.errors.loadCanvas);
         }
       } finally {
         if (mounted) {
@@ -461,7 +631,7 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
     return () => {
       mounted = false;
     };
-  }, [appMode, projectId, setEdges, setNodes, supabase]);
+  }, [appMode, copy.errors.loadCanvas, projectId, setEdges, setNodes, supabase]);
 
   useEffect(() => {
     if (!loadedRef.current || loading || !dirtyRef.current) {
@@ -469,17 +639,40 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
     }
 
     const timer = window.setTimeout(() => {
+      setAutosaveState("saving");
       void persistSnapshot(nodes, edges)
         .then(() => {
           dirtyRef.current = false;
+          setAutosaveState("saved");
         })
         .catch((caughtError) => {
-          setError(caughtError instanceof Error ? caughtError.message : "自动保存失败。");
+          setAutosaveState("error");
+          setError(caughtError instanceof Error ? caughtError.message : copy.errors.autoSave);
         });
-    }, 1000);
+    }, 700);
 
     return () => window.clearTimeout(timer);
-  }, [edges, loading, nodes, persistSnapshot]);
+  }, [copy.errors.autoSave, edges, loading, nodes, persistSnapshot, viewport]);
+
+  useEffect(() => {
+    function flushBeforeHidden() {
+      if (document.visibilityState !== "hidden" || !loadedRef.current || !dirtyRef.current) {
+        return;
+      }
+
+      void persistSnapshot(nodesRef.current, edgesRef.current)
+        .then(() => {
+          dirtyRef.current = false;
+          setAutosaveState("saved");
+        })
+        .catch(() => {
+          setAutosaveState("error");
+        });
+    }
+
+    document.addEventListener("visibilitychange", flushBeforeHidden);
+    return () => document.removeEventListener("visibilitychange", flushBeforeHidden);
+  }, [persistSnapshot]);
 
   async function handleSave() {
     setSaving(true);
@@ -489,9 +682,10 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
     try {
       await persistSnapshot(nodesRef.current, edgesRef.current);
       dirtyRef.current = false;
-      setStatus("已保存");
+      setAutosaveState("saved");
+      setStatus(copy.status.saved);
     } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : "保存失败。");
+      setError(caughtError instanceof Error ? caughtError.message : copy.errors.save);
     } finally {
       setSaving(false);
     }
@@ -517,10 +711,10 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
       }
       setProjectName(nextName);
       setDraftProjectName(nextName);
-      setStatus("项目名称已更新");
+      setStatus(copy.status.renamed);
     } catch (caughtError) {
       setDraftProjectName(projectName);
-      setError(caughtError instanceof Error ? caughtError.message : "项目重命名失败。");
+      setError(caughtError instanceof Error ? caughtError.message : copy.errors.rename);
     }
   }
 
@@ -543,16 +737,16 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
     link.click();
     link.remove();
     URL.revokeObjectURL(url);
-    setStatus("画布 JSON 已导出");
+    setStatus(copy.status.exported);
   }
 
   async function handleCopyProjectLink() {
     try {
       await copyTextToClipboard(window.location.href);
-      setStatus("项目链接已复制");
+      setStatus(copy.status.copied);
       return true;
     } catch {
-      setError("项目链接复制失败，请手动复制浏览器地址栏链接。");
+      setError(copy.status.copyFailed);
       return false;
     }
   }
@@ -579,7 +773,7 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
 
       return [...current, generationNode];
     });
-    setStatus("生成任务已添加到画布");
+    setStatus(copy.status.generationAdded);
   }
 
   function handleGenerationUpdate(
@@ -662,8 +856,7 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
         return next;
       });
     }
-    setStatus(`${media.mediaType === "video" ? "视频" : "图片"}已添加到画布`);
-    window.setTimeout(() => void flow?.fitView({ padding: 0.25, duration: 350 }), 0);
+    setStatus(media.mediaType === "video" ? copy.status.videoAdded : copy.status.imageAdded);
   }
 
   function handleTool(tool: CanvasTool) {
@@ -1339,8 +1532,8 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
     <div
       className={
         sidebarOpen
-          ? "rufo-canvas grid h-screen grid-cols-[minmax(0,1fr)_380px] overflow-hidden bg-[color:var(--rufo-canvas-bg)] text-[color:var(--rufo-canvas-fg)] max-lg:grid-cols-1"
-          : "rufo-canvas grid h-screen grid-cols-1 overflow-hidden bg-[color:var(--rufo-canvas-bg)] text-[color:var(--rufo-canvas-fg)]"
+          ? "rufo-route-enter rufo-canvas grid h-screen grid-cols-[minmax(0,1fr)_380px] overflow-hidden bg-[color:var(--rufo-canvas-bg)] text-[color:var(--rufo-canvas-fg)] max-lg:grid-cols-1"
+          : "rufo-route-enter rufo-canvas grid h-screen grid-cols-1 overflow-hidden bg-[color:var(--rufo-canvas-bg)] text-[color:var(--rufo-canvas-fg)]"
       }
     >
       <section ref={sectionRef} className="relative min-w-0 overflow-hidden">
@@ -1354,7 +1547,7 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
 
         <header className="pointer-events-none absolute left-0 right-0 top-0 z-30 flex h-12 items-center justify-between px-4">
           <div className="pointer-events-auto flex items-center gap-3">
-            <Link href="/projects" title="返回项目" className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-950 text-white shadow-sm">
+            <Link href="/projects" title={copy.topbar.back} className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-950 text-white shadow-sm">
               <ArrowLeft className="h-4 w-4" aria-hidden="true" />
             </Link>
             <form
@@ -1373,13 +1566,13 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
                   void handleRenameProject();
                 }}
                 className="h-8 w-44 rounded-md border border-transparent bg-transparent px-2 text-sm font-semibold text-slate-800 outline-none hover:border-slate-200 hover:bg-white focus:border-slate-300 focus:bg-white"
-                aria-label="项目名称"
-                title="编辑项目名称"
+                aria-label={copy.topbar.projectName}
+                title={copy.topbar.editProjectName}
               />
               {renamingProject ? (
                 <button
                   type="submit"
-                  title="保存项目名称"
+                  title={copy.topbar.saveProjectName}
                   className="flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-white"
                 >
                   <Check className="h-4 w-4" aria-hidden="true" />
@@ -1395,17 +1588,37 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
               className="inline-flex h-8 items-center gap-2 rounded-lg bg-white px-3 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-60"
             >
               {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : <Save className="h-3.5 w-3.5" aria-hidden="true" />}
-              保存
+              {saving ? copy.topbar.saving : copy.topbar.save}
             </button>
-            {uploading ? <span className="text-xs text-blue-600 max-sm:hidden">正在上传...</span> : null}
+            <span
+              className={
+                autosaveState === "error"
+                  ? "text-xs text-red-600 max-sm:hidden"
+                  : autosaveState === "dirty"
+                    ? "text-xs text-amber-600 max-sm:hidden"
+                    : autosaveState === "saving"
+                      ? "text-xs text-blue-600 max-sm:hidden"
+                      : "text-xs text-slate-400 max-sm:hidden"
+              }
+            >
+              {copy.autosave[autosaveState]}
+            </span>
+            {uploading ? <span className="text-xs text-blue-600 max-sm:hidden">{copy.topbar.uploading}</span> : null}
             {status ? <span className="text-xs text-emerald-600 max-sm:hidden">{status}</span> : null}
             {error ? <span className="max-w-96 truncate text-xs text-red-600 max-md:hidden">{error}</span> : null}
           </div>
 
           <div className="pointer-events-auto flex items-center gap-3 text-xs font-medium text-slate-500">
+            <CanvasPreferenceControls
+              copy={copy}
+              themeMode={themeMode}
+              language={language}
+              setThemeMode={setThemeMode}
+              setLanguage={setLanguage}
+            />
             <button
               type="button"
-              title="画布帮助"
+              title={copy.topbar.help}
               onClick={() => setHelpDialogOpen(true)}
               className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50"
             >
@@ -1413,7 +1626,7 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
             </button>
             <button
               type="button"
-              title="分享项目"
+              title={copy.topbar.share}
               onClick={() => setShareDialogOpen(true)}
               className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50"
             >
@@ -1421,17 +1634,17 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
             </button>
             <button
               type="button"
-              title="导出画布 JSON"
+              title={copy.topbar.exportJson}
               onClick={handleExportCanvas}
               className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50"
             >
               <FileJson className="h-4 w-4" aria-hidden="true" />
             </button>
-            <span className="inline-flex items-center gap-1" title="模型接入状态">
+            <span className="inline-flex items-center gap-1" title={copy.topbar.modelStatus}>
               <Zap className="h-3.5 w-3.5 fill-lime-400 text-lime-500" aria-hidden="true" />
-              多模型
+              {copy.topbar.multiModel}
             </span>
-            <button type="button" title="模型与额度" onClick={() => setModelStatusOpen(true)} className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 text-white shadow-sm">
+            <button type="button" title={copy.topbar.modelStatus} onClick={() => setModelStatusOpen(true)} className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 text-white shadow-sm">
               <Gift className="h-4 w-4" aria-hidden="true" />
             </button>
             <UserMenu />
@@ -1441,7 +1654,7 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
         {loading ? (
           <div className="flex h-full items-center justify-center text-slate-500">
             <Loader2 className="mr-2 h-5 w-5 animate-spin" aria-hidden="true" />
-            正在加载画布
+            {copy.canvas.loading}
           </div>
         ) : (
           <CanvasNodeActionsProvider actions={nodeActions}>
@@ -1472,10 +1685,11 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
                 setViewport(nextViewport);
                 if (loadedRef.current) {
                   dirtyRef.current = true;
+                  setAutosaveState("dirty");
                 }
               }}
               defaultViewport={viewport}
-              fitView={nodes.length > 0}
+              fitView={false}
               minZoom={0.1}
               maxZoom={3}
               deleteKeyCode={["Backspace", "Delete"]}
@@ -1508,7 +1722,7 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
 
         {!loading && nodes.length === 0 ? (
           <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
-            <p className="text-sm text-slate-400">输入想法生成图片或视频，也可以从底部工具栏添加内容</p>
+            <p className="text-sm text-slate-400">{copy.canvas.empty}</p>
           </div>
         ) : null}
 
@@ -1537,6 +1751,7 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
 
         {selectedNodes.length ? (
           <SelectionActionBar
+            copy={copy}
             selectedCount={selectedNodes.length}
             canGroup={selectedNodes.length >= 2}
             canUngroup={selectedGroupNodes.length > 0}
@@ -1550,7 +1765,7 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
         <div className="absolute bottom-4 left-4 z-30 flex items-center gap-2 text-slate-500">
           <button
             type="button"
-            title="撤销"
+            title={copy.canvas.undo}
             disabled={!canUndo}
             onClick={undo}
             className="rounded-md p-1.5 hover:bg-white disabled:cursor-not-allowed disabled:opacity-30"
@@ -1559,7 +1774,7 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
           </button>
           <button
             type="button"
-            title="重做"
+            title={copy.canvas.redo}
             disabled={!canRedo}
             onClick={redo}
             className="rounded-md p-1.5 hover:bg-white disabled:cursor-not-allowed disabled:opacity-30"
@@ -1569,7 +1784,7 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
           <span className="h-4 w-px bg-slate-200" />
           <button
             type="button"
-            title="缩小"
+            title={copy.canvas.zoomOut}
             onClick={() => void flow?.zoomOut({ duration: 160 })}
             className="rounded-md p-1.5 hover:bg-white"
           >
@@ -1577,7 +1792,7 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
           </button>
           <button
             type="button"
-            title="放大"
+            title={copy.canvas.zoomIn}
             onClick={() => void flow?.zoomIn({ duration: 160 })}
             className="rounded-md p-1.5 hover:bg-white"
           >
@@ -1585,7 +1800,7 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
           </button>
           <button
             type="button"
-            title="适配全部内容"
+            title={copy.canvas.fitView}
             onClick={() => void flow?.fitView({ padding: 0.18, duration: 260 })}
             className="rounded-md p-1.5 hover:bg-white"
           >
@@ -1594,7 +1809,7 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
           <span className="h-4 w-px bg-slate-200" />
           <button
             type="button"
-            title="导航缩略图"
+            title={copy.canvas.minimap}
             onClick={() => setMiniMapVisible((current) => !current)}
             className={miniMapVisible ? "rounded-md bg-slate-900 p-1.5 text-white" : "rounded-md p-1.5 hover:bg-white"}
           >
@@ -1602,7 +1817,7 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
           </button>
           <button
             type="button"
-            title="图层"
+            title={copy.canvas.layers}
             onClick={() => setFloatingPanel((current) => (current === "layers" ? null : "layers"))}
             className={floatingPanel === "layers" ? "rounded-md bg-slate-900 p-1.5 text-white" : "rounded-md p-1.5 hover:bg-white"}
           >
@@ -1610,7 +1825,7 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
           </button>
           <button
             type="button"
-            title="资产"
+            title={copy.canvas.assets}
             onClick={() => setFloatingPanel((current) => (current === "assets" ? null : "assets"))}
             className={floatingPanel === "assets" ? "rounded-md bg-slate-900 p-1.5 text-white" : "rounded-md p-1.5 hover:bg-white"}
           >
@@ -1623,6 +1838,7 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
         {floatingPanel ? (
           <CanvasPanel
             panel={floatingPanel}
+            copy={copy}
             nodes={nodes}
             mediaNodes={mediaNodes}
             onClose={() => setFloatingPanel(null)}
@@ -1644,7 +1860,7 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
               <button
                 key={tool.id}
                 type="button"
-                title={tool.label}
+                title={copy.tools[tool.id]}
                 onClick={() => handleTool(tool.id)}
                 className={
                   active
@@ -1675,7 +1891,7 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
       ) : (
         <button
           type="button"
-          title="打开 Agent"
+          title="Rufo Agent"
           onClick={() => setSidebarOpen(true)}
           className="absolute right-4 top-16 z-30 flex h-10 w-10 items-center justify-center rounded-full bg-slate-950 text-white shadow-lg"
         >
@@ -1693,6 +1909,7 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
 
       {shareDialogOpen ? (
         <ShareCanvasDialog
+          copy={copy}
           projectName={projectName}
           onClose={() => setShareDialogOpen(false)}
           onCopyLink={handleCopyProjectLink}
@@ -1701,11 +1918,12 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
       ) : null}
 
       {helpDialogOpen ? (
-        <CanvasHelpDialog onClose={() => setHelpDialogOpen(false)} />
+        <CanvasHelpDialog copy={copy} onClose={() => setHelpDialogOpen(false)} />
       ) : null}
 
       {modelStatusOpen ? (
         <ModelStatusDialog
+          copy={copy}
           onClose={() => setModelStatusOpen(false)}
           onOpenAgent={() => {
             setModelStatusOpen(false);
@@ -1718,8 +1936,60 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
   );
 }
 
+function CanvasPreferenceControls({
+  copy,
+  themeMode,
+  language,
+  setThemeMode,
+  setLanguage
+}: {
+  copy: CanvasCopy;
+  themeMode: RufoThemeMode;
+  language: RufoLanguage;
+  setThemeMode: (themeMode: RufoThemeMode) => void;
+  setLanguage: (language: RufoLanguage) => void;
+}) {
+  const ThemeIcon = themeMode === "light" ? Sun : themeMode === "dark" ? Moon : Monitor;
+
+  return (
+    <div className="hidden items-center gap-2 xl:flex">
+      <label className="inline-flex h-8 items-center gap-1 rounded-full border border-slate-200 bg-white px-2 text-slate-500 shadow-sm">
+        <ThemeIcon className="h-3.5 w-3.5" aria-hidden="true" />
+        <span className="sr-only">{copy.theme.theme}</span>
+        <select
+          value={themeMode}
+          onChange={(event) => setThemeMode(event.target.value as RufoThemeMode)}
+          className="bg-transparent text-[11px] font-medium outline-none"
+          aria-label={copy.theme.theme}
+        >
+          <option value="system">{copy.theme.system}</option>
+          <option value="light">{copy.theme.light}</option>
+          <option value="dark">{copy.theme.dark}</option>
+        </select>
+      </label>
+      <label className="inline-flex h-8 items-center gap-1 rounded-full border border-slate-200 bg-white px-2 text-slate-500 shadow-sm">
+        <Languages className="h-3.5 w-3.5" aria-hidden="true" />
+        <span className="sr-only">{copy.theme.language}</span>
+        <select
+          value={language}
+          onChange={(event) => setLanguage(event.target.value as RufoLanguage)}
+          className="bg-transparent text-[11px] font-medium outline-none"
+          aria-label={copy.theme.language}
+        >
+          {Object.entries(canvasLanguageLabels).map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </select>
+      </label>
+    </div>
+  );
+}
+
 function CanvasPanel({
   panel,
+  copy,
   nodes,
   mediaNodes,
   onClose,
@@ -1728,6 +1998,7 @@ function CanvasPanel({
   onToggleVisibility
 }: {
   panel: Exclude<FloatingPanel, null>;
+  copy: CanvasCopy;
   nodes: CanvasNode[];
   mediaNodes: CanvasNode[];
   onClose: () => void;
@@ -1740,8 +2011,8 @@ function CanvasPanel({
   return (
     <div className="absolute bottom-14 left-4 z-40 flex max-h-80 w-72 flex-col overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl">
       <div className="flex h-10 items-center justify-between border-b border-slate-100 px-3">
-        <h3 className="text-xs font-semibold text-slate-800">{panel === "layers" ? "图层" : "媒体资产"}</h3>
-        <button type="button" title="关闭" onClick={onClose} className="rounded p-1 text-slate-400 hover:bg-slate-100">
+        <h3 className="text-xs font-semibold text-slate-800">{panel === "layers" ? copy.panels.layers : copy.panels.assets}</h3>
+        <button type="button" title={copy.panels.close} onClick={onClose} className="rounded p-1 text-slate-400 hover:bg-slate-100">
           <X className="h-4 w-4" aria-hidden="true" />
         </button>
       </div>
@@ -1754,21 +2025,21 @@ function CanvasPanel({
                 <span className="block text-[10px] text-slate-400">{node.data.mediaType ?? node.data.kind}</span>
               </button>
               {panel === "layers" ? (
-                <button type="button" title={node.hidden ? "显示" : "隐藏"} onClick={() => onToggleVisibility(node.id)} className="rounded p-1 text-slate-400 hover:bg-white">
+                <button type="button" title={node.hidden ? copy.panels.show : copy.panels.hide} onClick={() => onToggleVisibility(node.id)} className="rounded p-1 text-slate-400 hover:bg-white">
                   {node.hidden ? <EyeOff className="h-3.5 w-3.5" aria-hidden="true" /> : <Eye className="h-3.5 w-3.5" aria-hidden="true" />}
                 </button>
               ) : node.data.assetUrl ? (
-                <a href={node.data.assetUrl} download={node.data.label} title="下载" className="rounded p-1 text-slate-400 hover:bg-white">
+                <a href={node.data.assetUrl} download={node.data.label} title={copy.panels.download} className="rounded p-1 text-slate-400 hover:bg-white">
                   <Download className="h-3.5 w-3.5" aria-hidden="true" />
                 </a>
               ) : null}
-              <button type="button" title="删除" onClick={() => onDelete(node.id)} className="rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-600">
+              <button type="button" title={copy.panels.delete} onClick={() => onDelete(node.id)} className="rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-600">
                 <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
               </button>
             </div>
           ))
         ) : (
-          <p className="px-2 py-6 text-center text-xs text-slate-400">暂无内容</p>
+          <p className="px-2 py-6 text-center text-xs text-slate-400">{copy.panels.empty}</p>
         )}
       </div>
     </div>
@@ -1776,6 +2047,7 @@ function CanvasPanel({
 }
 
 function SelectionActionBar({
+  copy,
   selectedCount,
   canGroup,
   canUngroup,
@@ -1784,6 +2056,7 @@ function SelectionActionBar({
   onUngroup,
   onDelete
 }: {
+  copy: CanvasCopy;
   selectedCount: number;
   canGroup: boolean;
   canUngroup: boolean;
@@ -1795,45 +2068,45 @@ function SelectionActionBar({
   return (
     <div className="absolute left-1/2 top-16 z-40 flex -translate-x-1/2 items-center gap-1 rounded-xl border border-slate-200 bg-white p-1.5 shadow-xl shadow-slate-200/80">
       <span className="px-2 text-xs font-semibold text-slate-600">
-        已选 {selectedCount} 项
+        {copy.selection.selected} {selectedCount}
       </span>
       <button
         type="button"
-        title="复制选中内容"
+        title={copy.selection.copy}
         onClick={onDuplicate}
         className="inline-flex h-8 items-center gap-1 rounded-md px-2 text-xs font-semibold text-slate-600 hover:bg-slate-100"
       >
         <Copy className="h-3.5 w-3.5" aria-hidden="true" />
-        复制
+        {copy.selection.copy}
       </button>
       <button
         type="button"
-        title="打组"
+        title={copy.selection.group}
         disabled={!canGroup}
         onClick={onGroup}
         className="inline-flex h-8 items-center gap-1 rounded-md px-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-35"
       >
         <Layers className="h-3.5 w-3.5" aria-hidden="true" />
-        打组
+        {copy.selection.group}
       </button>
       <button
         type="button"
-        title="取消打组"
+        title={copy.selection.ungroup}
         disabled={!canUngroup}
         onClick={onUngroup}
         className="inline-flex h-8 items-center gap-1 rounded-md px-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-35"
       >
         <Square className="h-3.5 w-3.5" aria-hidden="true" />
-        取消打组
+        {copy.selection.ungroup}
       </button>
       <button
         type="button"
-        title="删除选中内容"
+        title={copy.selection.delete}
         onClick={onDelete}
         className="inline-flex h-8 items-center gap-1 rounded-md px-2 text-xs font-semibold text-red-600 hover:bg-red-50"
       >
         <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-        删除
+        {copy.selection.delete}
       </button>
     </div>
   );
@@ -1853,11 +2126,13 @@ function useCloseOnEscape(onClose: () => void) {
 }
 
 function ShareCanvasDialog({
+  copy,
   projectName,
   onClose,
   onCopyLink,
   onExport
 }: {
+  copy: CanvasCopy;
   projectName: string;
   onClose: () => void;
   onCopyLink: () => Promise<boolean>;
@@ -1884,12 +2159,12 @@ function ShareCanvasDialog({
       <section className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-5 shadow-2xl">
         <header className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-base font-semibold text-slate-950">分享与导出</h2>
+            <h2 className="text-base font-semibold text-slate-950">{copy.share.title}</h2>
             <p className="mt-1 text-xs leading-5 text-slate-500">
-              {projectName} 的链接可复制给有权限的用户，画布 JSON 可用于备份或迁移。
+              {copy.share.body(projectName)}
             </p>
           </div>
-          <button type="button" title="关闭" onClick={onClose} className="rounded-md p-1 text-slate-400 hover:bg-slate-100">
+          <button type="button" title={copy.panels.close} onClick={onClose} className="rounded-md p-1 text-slate-400 hover:bg-slate-100">
             <X className="h-4 w-4" aria-hidden="true" />
           </button>
         </header>
@@ -1900,15 +2175,15 @@ function ShareCanvasDialog({
             className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white hover:bg-slate-800"
           >
             <Share2 className="h-4 w-4" aria-hidden="true" />
-            复制项目链接
+            {copy.share.copyLink}
           </button>
           {copyState === "success" ? (
             <p className="rounded-lg bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700">
-              已复制项目链接。
+              {copy.share.copied}
             </p>
           ) : copyState === "error" ? (
             <p className="rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-700">
-              复制失败，请手动复制浏览器地址栏链接。
+              {copy.share.copyError}
             </p>
           ) : null}
           <button
@@ -1917,7 +2192,7 @@ function ShareCanvasDialog({
             className="inline-flex h-11 items-center justify-center gap-2 rounded-lg border border-slate-200 px-4 text-sm font-semibold text-slate-700 hover:bg-slate-50"
           >
             <FileJson className="h-4 w-4" aria-hidden="true" />
-            导出画布 JSON
+            {copy.share.exportJson}
           </button>
         </div>
       </section>
@@ -1925,17 +2200,8 @@ function ShareCanvasDialog({
   );
 }
 
-function CanvasHelpDialog({ onClose }: { onClose: () => void }) {
+function CanvasHelpDialog({ copy, onClose }: { copy: CanvasCopy; onClose: () => void }) {
   useCloseOnEscape(onClose);
-
-  const items = [
-    ["框选多个节点", "在画布空白处拖拽，选中后可复制、删除、打组或取消打组。"],
-    ["移动画布", "按住空格拖拽，或使用鼠标中键/右键拖动画布。"],
-    ["继续生成", "选中图片或视频后点击闪光按钮，或从节点两侧拖出连接线。"],
-    ["上传素材", "底部上传按钮支持图片和视频，上传后会作为可拖动节点。"],
-    ["历史记录", "右侧 Agent 顶部时钟按钮可查看生成历史和失败原因。"],
-    ["快捷键", "Delete 删除，⌘/Ctrl+Z 撤销，Shift+⌘/Ctrl+Z 重做，⌘/Ctrl+D 复制。"]
-  ];
 
   return (
     <div
@@ -1949,17 +2215,17 @@ function CanvasHelpDialog({ onClose }: { onClose: () => void }) {
       <section className="w-full max-w-2xl rounded-xl border border-slate-200 bg-white p-5 shadow-2xl">
         <header className="flex items-start justify-between gap-4">
           <div>
-            <h2 className="text-base font-semibold text-slate-950">画布操作帮助</h2>
+            <h2 className="text-base font-semibold text-slate-950">{copy.help.title}</h2>
             <p className="mt-1 text-xs leading-5 text-slate-500">
-              这些操作都已经接入当前 Rufo 画布，不是静态说明。
+              {copy.help.body}
             </p>
           </div>
-          <button type="button" title="关闭" onClick={onClose} className="rounded-md p-1 text-slate-400 hover:bg-slate-100">
+          <button type="button" title={copy.panels.close} onClick={onClose} className="rounded-md p-1 text-slate-400 hover:bg-slate-100">
             <X className="h-4 w-4" aria-hidden="true" />
           </button>
         </header>
         <div className="mt-5 grid gap-3 sm:grid-cols-2">
-          {items.map(([title, body]) => (
+          {copy.help.items.map(([title, body]) => (
             <article key={title} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
               <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
               <p className="mt-1 text-xs leading-5 text-slate-600">{body}</p>
@@ -1972,9 +2238,11 @@ function CanvasHelpDialog({ onClose }: { onClose: () => void }) {
 }
 
 function ModelStatusDialog({
+  copy,
   onClose,
   onOpenAgent
 }: {
+  copy: CanvasCopy;
   onClose: () => void;
   onOpenAgent: () => void;
 }) {
@@ -1996,7 +2264,7 @@ function ModelStatusDialog({
       })
       .catch(() => {
         if (mounted) {
-          setError("模型状态加载失败，请稍后重试。");
+          setError(copy.models.error);
         }
       })
       .finally(() => {
@@ -2008,7 +2276,7 @@ function ModelStatusDialog({
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [copy.models.error]);
 
   const availableCount = models.filter((model) => model.available).length;
   const imageCount = models.filter((model) => model.mediaType === "image").length;
@@ -2026,12 +2294,12 @@ function ModelStatusDialog({
       <section className="flex max-h-[min(760px,calc(100vh-32px))] w-full max-w-4xl flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl">
         <header className="flex items-start justify-between gap-4 border-b border-slate-100 p-5">
           <div>
-            <h2 className="text-base font-semibold text-slate-950">模型与额度状态</h2>
+            <h2 className="text-base font-semibold text-slate-950">{copy.models.title}</h2>
             <p className="mt-1 text-xs leading-5 text-slate-500">
-              当前模型池：{models.length || "-"} 个模型，{availableCount || 0} 个可直接使用，图片 {imageCount || 0} 个，视频 {videoCount || 0} 个。
+              {copy.models.summary(models.length, availableCount, imageCount, videoCount)}
             </p>
           </div>
-          <button type="button" title="关闭" onClick={onClose} className="rounded-md p-1 text-slate-400 hover:bg-slate-100">
+          <button type="button" title={copy.panels.close} onClick={onClose} className="rounded-md p-1 text-slate-400 hover:bg-slate-100">
             <X className="h-4 w-4" aria-hidden="true" />
           </button>
         </header>
@@ -2039,7 +2307,7 @@ function ModelStatusDialog({
           {loading ? (
             <div className="flex h-36 items-center justify-center text-sm text-slate-500">
               <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
-              正在读取模型状态
+              {copy.models.loading}
             </div>
           ) : error ? (
             <p className="rounded-lg bg-red-50 p-3 text-sm text-red-700">{error}</p>
@@ -2051,17 +2319,17 @@ function ModelStatusDialog({
                     <div>
                       <h3 className="text-sm font-semibold text-slate-900">{model.label}</h3>
                       <p className="mt-1 text-[11px] text-slate-500">
-                        {canvasProviderDisplayName(model.provider)} · {model.mediaType === "video" ? "视频" : "图片"}
+                        {canvasProviderDisplayName(model.provider)} · {model.mediaType === "video" ? copy.models.video : copy.models.image}
                       </p>
                     </div>
                     <span className={model.available ? "rounded bg-emerald-50 px-2 py-1 text-[10px] font-semibold text-emerald-700" : "rounded bg-amber-50 px-2 py-1 text-[10px] font-semibold text-amber-700"}>
-                      {model.available ? "可用" : "需 Key"}
+                      {model.available ? copy.models.available : copy.models.needKey}
                     </span>
                   </div>
                   <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-600">{model.description}</p>
                   <p className="mt-2 text-[10px] text-slate-400">
-                    比例 {model.aspectRatios?.join(" / ") ?? "-"} · 画质 {model.qualityOptions?.join(" / ") ?? "-"}
-                    {model.durationOptions?.length ? ` · 时长 ${model.durationOptions.join(" / ")} 秒` : ""}
+                    {copy.models.ratio} {model.aspectRatios?.join(" / ") ?? "-"} · {copy.models.quality} {model.qualityOptions?.join(" / ") ?? "-"}
+                    {model.durationOptions?.length ? ` · ${copy.models.duration} ${model.durationOptions.join(" / ")}s` : ""}
                   </p>
                 </article>
               ))}
@@ -2074,7 +2342,7 @@ function ModelStatusDialog({
             onClick={onOpenAgent}
             className="h-10 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white hover:bg-slate-800"
           >
-            打开 Agent 设置
+            {copy.models.openAgent}
           </button>
         </footer>
       </section>
