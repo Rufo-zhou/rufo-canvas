@@ -37,6 +37,7 @@ export type CanvasNodeData = Record<string, unknown> & {
   audio?: boolean;
   objectFit?: "contain" | "cover";
   resizeMode?: "aspect" | "free";
+  preserveCanvasSize?: boolean;
   text?: string;
   color?: string;
   path?: string;

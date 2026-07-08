@@ -765,8 +765,23 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
         existingDraft?.position ??
           getCanvasCenter(flow, sectionRef.current)
       );
+      const existingDraftSize = existingDraft
+        ? readCanvasNodeSize(existingDraft)
+        : null;
       const generationNode = existingDraft
-        ? baseGenerationNode
+        ? {
+            ...baseGenerationNode,
+            style: existingDraftSize
+              ? { ...baseGenerationNode.style, ...existingDraftSize }
+              : baseGenerationNode.style,
+            data: {
+              ...baseGenerationNode.data,
+              width: existingDraft?.data.width,
+              height: existingDraft?.data.height,
+              preserveCanvasSize:
+                existingDraft?.data.preserveCanvasSize ?? Boolean(existingDraftSize)
+            }
+          }
         : {
             ...baseGenerationNode,
             position: findAvailableCanvasPosition(
@@ -849,11 +864,22 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
         : undefined;
       const nextPosition = generationNode?.position;
       const provisionalNode = createMediaNode(media, current.length, nextPosition);
+      const inheritedCanvasSize =
+        generationNode?.data.preserveCanvasSize === true
+          ? readCanvasNodeSize(generationNode)
+          : null;
       const nextNode = {
         ...provisionalNode,
+        style: inheritedCanvasSize
+          ? { ...provisionalNode.style, ...inheritedCanvasSize }
+          : provisionalNode.style,
+        data: {
+          ...provisionalNode.data,
+          preserveCanvasSize: Boolean(inheritedCanvasSize)
+        },
         position: findAvailableCanvasPosition(
           provisionalNode.position,
-          readCanvasNodeSize(provisionalNode),
+          inheritedCanvasSize ?? readCanvasNodeSize(provisionalNode),
           current,
           {
             excludeIds: generationNode ? new Set([generationNode.id]) : undefined
@@ -1489,11 +1515,13 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
         typeof parentId === "string" && idMap.has(parentId);
       const nextParentId =
         parentIsDuplicated && parentId ? idMap.get(parentId) : node.parentId;
+      const nextExtent = typeof nextParentId === "string" ? undefined : node.extent;
 
       return {
         ...structuredClone(node),
         id: idMap.get(node.id)!,
         parentId: nextParentId,
+        extent: nextExtent,
         position: {
           x: parentIsDuplicated ? node.position.x : node.position.x + 44,
           y: parentIsDuplicated ? node.position.y : node.position.y + 44
@@ -1578,7 +1606,7 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
         return {
           ...node,
           parentId: groupId,
-          extent: "parent" as const,
+          extent: undefined,
           position: {
             x: Math.round(absolutePosition.x - groupPosition.x),
             y: Math.round(absolutePosition.y - groupPosition.y)
@@ -2537,7 +2565,8 @@ function createDraftGenerationNode(
       statusLabel: "等待设置参数",
       progress: 0,
       width: sourceSize?.width,
-      height: sourceSize?.height
+      height: sourceSize?.height,
+      preserveCanvasSize: Boolean(sourceSize)
     }
   };
 }
@@ -2692,6 +2721,7 @@ function prepareCanvasNodesForSnapshot(nodes: CanvasNode[]) {
       ...node,
       initialWidth,
       initialHeight,
+      extent: typeof node.parentId === "string" ? undefined : node.extent,
       selected: false,
       dragging: undefined,
       measured: undefined
@@ -2727,6 +2757,14 @@ function normalizeMediaNodeSizes(nodes: CanvasNode[]) {
   return nodes.map((node) => {
     if (node.data.kind !== "asset") {
       return node;
+    }
+
+    if (node.data.preserveCanvasSize === true) {
+      return {
+        ...node,
+        dragHandle:
+          node.data.mediaType === "video" ? ".media-drag-handle" : undefined
+      };
     }
 
     const width = readPositiveNumber(node.data.width);
