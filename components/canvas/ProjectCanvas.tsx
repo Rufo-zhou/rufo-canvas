@@ -877,14 +877,13 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
           ...provisionalNode.data,
           preserveCanvasSize: Boolean(inheritedCanvasSize)
         },
-        position: findAvailableCanvasPosition(
-          provisionalNode.position,
-          inheritedCanvasSize ?? readCanvasNodeSize(provisionalNode),
-          current,
-          {
-            excludeIds: generationNode ? new Set([generationNode.id]) : undefined
-          }
-        )
+        position: generationNode
+          ? generationNode.position
+          : findAvailableCanvasPosition(
+              provisionalNode.position,
+              inheritedCanvasSize ?? readCanvasNodeSize(provisionalNode),
+              current
+            )
       };
 
       if (generationNode) {
@@ -1320,47 +1319,44 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
       return;
     }
 
-    let draftNodeId: string | undefined;
-    if (draftPosition) {
-      recordHistory();
-      draftNodeId = `generation-draft-${crypto.randomUUID()}`;
-      setNodes((current) => {
-        const draftNode = createDraftGenerationNode(
-          draftNodeId!,
-          draftPosition,
-          node
-        );
-        const positionedDraftNode = {
-          ...draftNode,
-          position: findAvailableCanvasPosition(
-            draftNode.position,
-            readCanvasNodeSize(draftNode),
-            current
-          )
-        };
-        const next = [
-          ...current,
-          positionedDraftNode
-        ];
-        nodesRef.current = next;
+    recordHistory();
+    const draftNodeId = `generation-draft-${crypto.randomUUID()}`;
+    setNodes((current) => {
+      const currentSource =
+        current.find((candidate) => candidate.id === nodeId) ?? node;
+      const draftNode = createDraftGenerationNode(
+        draftNodeId,
+        { x: 0, y: 0 },
+        currentSource
+      );
+      const positionedDraftNode = {
+        ...draftNode,
+        position: findContinuationDraftPosition({
+          sourceNode: currentSource,
+          draftNode,
+          nodes: current,
+          requestedPosition: draftPosition
+        })
+      };
+      const next = [...current, positionedDraftNode];
+      nodesRef.current = next;
+      return next;
+    });
+    const continuationEdge: CanvasEdge = {
+      id: `edge-${crypto.randomUUID()}`,
+      source: nodeId,
+      target: draftNodeId,
+      type: "smoothstep",
+      animated: true,
+      style: { stroke: "#64748b", strokeWidth: 1.5 }
+    };
+    afterNextPaint(() => {
+      setEdges((current) => {
+        const next = addEdge(continuationEdge, current);
+        edgesRef.current = next;
         return next;
       });
-      const continuationEdge: CanvasEdge = {
-        id: `edge-${crypto.randomUUID()}`,
-        source: nodeId,
-        target: draftNodeId,
-        type: "smoothstep",
-        animated: true,
-        style: { stroke: "#64748b", strokeWidth: 1.5 }
-      };
-      afterNextPaint(() => {
-        setEdges((current) => {
-          const next = addEdge(continuationEdge, current);
-          edgesRef.current = next;
-          return next;
-        });
-      });
-    }
+    });
 
     setReferenceRequest({
       requestId: crypto.randomUUID(),
@@ -3014,6 +3010,66 @@ function getNodeAbsolutePosition(
     x: parentPosition.x + node.position.x,
     y: parentPosition.y + node.position.y
   };
+}
+
+function findContinuationDraftPosition(input: {
+  sourceNode: CanvasNode;
+  draftNode: CanvasNode;
+  nodes: CanvasNode[];
+  requestedPosition?: CanvasNodePosition;
+}): CanvasNodePosition {
+  const draftSize = readCanvasNodeSize(input.draftNode) ?? {
+    width: 320,
+    height: 240
+  };
+  const sourcePosition = getNodeAbsolutePosition(input.sourceNode, input.nodes);
+  const sourceSize = readCanvasNodeSize(input.sourceNode) ?? {
+    width: 320,
+    height: 240
+  };
+  const gap = 96;
+  const rowGap = 72;
+  const defaultPosition = {
+    x: Math.round(sourcePosition.x + sourceSize.width + gap),
+    y: Math.round(
+      sourcePosition.y + sourceSize.height / 2 - draftSize.height / 2
+    )
+  };
+  const candidates: CanvasNodePosition[] = [];
+
+  if (input.requestedPosition) {
+    candidates.push({
+      x: Math.round(input.requestedPosition.x - draftSize.width / 2),
+      y: Math.round(input.requestedPosition.y - draftSize.height / 2)
+    });
+  }
+
+  candidates.push(defaultPosition);
+
+  const columnStep = draftSize.width + gap;
+  const rowStep = draftSize.height + rowGap;
+  const rowOrder = [0, 1, -1, 2, -2, 3, -3, 4, -4];
+
+  for (let column = 0; column <= 8; column += 1) {
+    for (const row of rowOrder) {
+      candidates.push({
+        x: Math.round(defaultPosition.x + column * columnStep),
+        y: Math.round(defaultPosition.y + row * rowStep)
+      });
+    }
+  }
+
+  for (const candidate of candidates) {
+    if (
+      isCanvasPositionFree(candidate, draftSize, input.nodes, {
+        padding: 36
+      })
+    ) {
+      return candidate;
+    }
+  }
+
+  return findAvailableCanvasPosition(defaultPosition, draftSize, input.nodes);
 }
 
 function findAvailableCanvasPosition(
