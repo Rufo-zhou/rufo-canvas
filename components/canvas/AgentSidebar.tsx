@@ -139,6 +139,7 @@ type AgentCopy = {
   generateAudio: string;
   unsupportedAudio: string;
   supplierQuota: string;
+  videoRequiresKeyNote: string;
   referenceMode: string;
   referenceFit: string;
   referenceImages: string;
@@ -178,6 +179,7 @@ const agentCopyByLanguage: Record<RufoLanguage, AgentCopy> = {
     generateAudio: "生成音频",
     unsupportedAudio: "模型不支持",
     supplierQuota: "按供应商额度调用",
+    videoRequiresKeyNote: "公开稳定的视频生成接口目前都需要供应商 Key；填写自己的 Key 后即可使用视频模型。",
     referenceMode: "参考模式",
     referenceFit: "比例适配",
     referenceImages: "参考图片",
@@ -215,6 +217,7 @@ const agentCopyByLanguage: Record<RufoLanguage, AgentCopy> = {
     generateAudio: "Generate audio",
     unsupportedAudio: "Not supported",
     supplierQuota: "Uses provider quota",
+    videoRequiresKeyNote: "Stable public video-generation APIs currently require a provider key. Add your key to enable video models.",
     referenceMode: "Reference mode",
     referenceFit: "Fit mode",
     referenceImages: "Reference images",
@@ -252,6 +255,7 @@ const agentCopyByLanguage: Record<RufoLanguage, AgentCopy> = {
     generateAudio: "音声生成",
     unsupportedAudio: "非対応",
     supplierQuota: "プロバイダー上限を使用",
+    videoRequiresKeyNote: "安定した公開動画生成 API は現在プロバイダー Key が必要です。Key を追加すると動画モデルを使えます。",
     referenceMode: "参照モード",
     referenceFit: "比率調整",
     referenceImages: "参照画像",
@@ -289,6 +293,7 @@ const agentCopyByLanguage: Record<RufoLanguage, AgentCopy> = {
     generateAudio: "오디오 생성",
     unsupportedAudio: "지원 안 됨",
     supplierQuota: "공급자 한도 사용",
+    videoRequiresKeyNote: "안정적인 공개 비디오 생성 API는 현재 공급자 Key가 필요합니다. Key를 추가하면 비디오 모델을 사용할 수 있습니다.",
     referenceMode: "참조 모드",
     referenceFit: "비율 맞춤",
     referenceImages: "참조 이미지",
@@ -337,6 +342,48 @@ const fallbackModels: ModelOption[] = [
     qualityOptions: ["standard", "high", "ultra"],
     description: "无需密钥的公共图片模型，适合快速文字生图。",
     available: true
+  },
+  {
+    id: "flux-realism-free",
+    provider: "pollinations-free",
+    providerModel: "flux-realism",
+    label: "Flux Realism Public",
+    mediaType: "image",
+    freeTier: true,
+    requiresKey: false,
+    supportsReference: false,
+    aspectRatios: ["1:1", "4:3", "3:4", "3:2", "2:3", "16:9", "9:16", "21:9"],
+    qualityOptions: ["standard", "high", "ultra"],
+    description: "无需密钥的公共写实图片模型，适合人物、产品和场景视觉。",
+    available: true
+  },
+  {
+    id: "any-dark-free",
+    provider: "pollinations-free",
+    providerModel: "any-dark",
+    label: "Any Dark Public",
+    mediaType: "image",
+    freeTier: true,
+    requiresKey: false,
+    supportsReference: false,
+    aspectRatios: ["1:1", "4:3", "3:4", "3:2", "2:3", "16:9", "9:16", "21:9"],
+    qualityOptions: ["standard", "high", "ultra"],
+    description: "无需密钥的公共风格化图片模型，适合暗调、海报和概念氛围图。",
+    available: true
+  },
+  {
+    id: "gptimage-free",
+    provider: "pollinations-free",
+    providerModel: "gptimage",
+    label: "GPT Image Public",
+    mediaType: "image",
+    freeTier: true,
+    requiresKey: false,
+    supportsReference: false,
+    aspectRatios: ["1:1", "4:3", "3:4", "3:2", "2:3", "16:9", "9:16", "21:9"],
+    qualityOptions: ["standard", "high", "ultra"],
+    description: "无需密钥的公共图片模型，适合文字理解更强的通用创作。",
+    available: true
   }
 ];
 
@@ -348,7 +395,7 @@ const skillPresets: SkillPreset[] = [
     prompt: "为一款高端消费品生成电商产品主图，主体清晰，背景干净，包含专业布光、真实材质、可商用构图和高转化视觉层次。",
     aspectRatio: "1:1",
     quality: "high",
-    preferredModelIds: ["sana-free", "gptimage", "nano-banana", "agnes-image-2.0"]
+    preferredModelIds: ["flux-realism-free", "gptimage-free", "sana-free", "gptimage", "nano-banana", "agnes-image-2.0"]
   },
   {
     label: "Logo 设计",
@@ -357,7 +404,7 @@ const skillPresets: SkillPreset[] = [
     prompt: "设计一个原创品牌 Logo，要求图形简洁、可识别、适合数字产品和社交头像，输出干净背景、清晰边缘和品牌应用感。",
     aspectRatio: "1:1",
     quality: "high",
-    preferredModelIds: ["ideogram-v4-turbo", "gptimage", "sana-free"]
+    preferredModelIds: ["gptimage-free", "ideogram-v4-turbo", "gptimage", "sana-free"]
   },
   {
     label: "角色设定图",
@@ -366,7 +413,7 @@ const skillPresets: SkillPreset[] = [
     prompt: "创建一个原创写实角色设定图，包含统一身份特征、服装细节、正面半身构图、可继续用于视频生成的一致性描述。",
     aspectRatio: "3:4",
     quality: "high",
-    preferredModelIds: ["seedream", "nano-banana", "sana-free"]
+    preferredModelIds: ["flux-realism-free", "gptimage-free", "seedream", "nano-banana", "sana-free"]
   },
   {
     label: "电影感运镜",
@@ -485,6 +532,10 @@ export function AgentSidebar({
   );
   const referenceCount = canvasReferences.length + referenceFiles.length;
   const durationOptions = getDurationOptions(selectedModel, quality);
+  const videoModelsRequireKey =
+    mediaType === "video" &&
+    visibleModels.length > 0 &&
+    visibleModels.every((model) => !model.available);
 
   useEffect(() => {
     if (initialPrompt) {
@@ -1137,6 +1188,11 @@ export function AgentSidebar({
             {selectedModel?.provider === "pollinations" ? (
               <p className="mt-1 text-[10px] leading-4 text-amber-700">
                 Pollinations 模型会消耗 Pollen；API Key 已接入不代表账户有可用余额。
+              </p>
+            ) : null}
+            {videoModelsRequireKey && appMode !== "demo" ? (
+              <p className="mt-2 rounded-md bg-slate-50 px-3 py-2 text-[11px] leading-5 text-slate-600">
+                {copy.videoRequiresKeyNote}
               </p>
             ) : null}
             {selectedModel && !selectedModel.available && appMode !== "demo" ? (

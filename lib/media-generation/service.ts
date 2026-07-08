@@ -208,9 +208,24 @@ async function generatePollinationsFreeImage(
   );
 
   if (!response.ok) {
+    const text = await response.text().catch(() => "");
+    const providerMessage = readProviderErrorMessage(text);
+    const message =
+      response.status === 429
+        ? "免费图片模型当前繁忙，请稍后重试。"
+        : providerMessage?.includes("only available on enter.pollinations.ai")
+          ? "该公共图片模型已被供应商限制为账号模型，请切换其他公共模型，或在“自助接入 API”中填写 Pollinations Key。"
+          : providerMessage
+            ? `免费图片模型生成失败：${providerMessage}`
+            : "免费图片模型生成失败。";
+
     throw new MediaGenerationError(
-      response.status === 429 ? "免费图片模型当前繁忙，请稍后重试。" : "免费图片模型生成失败。",
-      "PROVIDER_RESPONSE_ERROR",
+      message,
+      response.status === 429
+        ? "PROVIDER_RATE_LIMITED"
+        : response.status >= 500
+          ? "PROVIDER_TEMPORARY_ERROR"
+          : "PROVIDER_RESPONSE_ERROR",
       response.status,
       "pollinations-free"
     );

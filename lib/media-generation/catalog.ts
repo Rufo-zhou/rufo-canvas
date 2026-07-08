@@ -35,6 +35,45 @@ export const mediaModels: MediaModel[] = [
     description: "无需密钥的公共图片模型，适合快速文字生图。"
   },
   {
+    id: "flux-realism-free",
+    provider: "pollinations-free",
+    providerModel: "flux-realism",
+    label: "Flux Realism Public",
+    mediaType: "image",
+    freeTier: true,
+    requiresKey: false,
+    supportsReference: false,
+    aspectRatios: imageRatios,
+    qualityOptions: imageQualities,
+    description: "无需密钥的公共写实图片模型，适合人物、产品和场景视觉。"
+  },
+  {
+    id: "any-dark-free",
+    provider: "pollinations-free",
+    providerModel: "any-dark",
+    label: "Any Dark Public",
+    mediaType: "image",
+    freeTier: true,
+    requiresKey: false,
+    supportsReference: false,
+    aspectRatios: imageRatios,
+    qualityOptions: imageQualities,
+    description: "无需密钥的公共风格化图片模型，适合暗调、海报和概念氛围图。"
+  },
+  {
+    id: "gptimage-free",
+    provider: "pollinations-free",
+    providerModel: "gptimage",
+    label: "GPT Image Public",
+    mediaType: "image",
+    freeTier: true,
+    requiresKey: false,
+    supportsReference: false,
+    aspectRatios: imageRatios,
+    qualityOptions: imageQualities,
+    description: "无需密钥的公共图片模型，适合文字理解更强的通用创作。"
+  },
+  {
     id: "flux",
     provider: "pollinations",
     providerModel: "flux",
