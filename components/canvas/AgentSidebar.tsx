@@ -1096,13 +1096,14 @@ export function AgentSidebar({
           <button
             type="button"
             title={view === "history" ? copy.backToCreate : copy.history}
+            aria-label={view === "history" ? copy.backToCreate : copy.history}
             onClick={() =>
               setView((current) => (current === "history" ? "create" : "history"))
             }
             className={
               view === "history"
-                ? "rounded-md bg-slate-950 p-1.5 text-white"
-                : "rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+                ? "rufo-canvas-icon-button flex h-11 w-11 items-center justify-center rounded-md bg-slate-950 text-white"
+                : "rufo-canvas-icon-button flex h-11 w-11 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700"
             }
           >
             <Clock3 className="h-4 w-4" aria-hidden="true" />
@@ -1110,12 +1111,13 @@ export function AgentSidebar({
           <button
             type="button"
             title={copy.apiSettings}
+            aria-label={copy.apiSettings}
             onClick={() => setSettingsOpen(true)}
-            className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+            className="rufo-canvas-icon-button flex h-11 w-11 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700"
           >
             <Settings2 className="h-4 w-4" aria-hidden="true" />
           </button>
-          <button type="button" title={copy.close} onClick={onClose} className="rounded-md p-1.5 text-slate-400 hover:bg-slate-100">
+          <button type="button" title={copy.close} aria-label={copy.close} onClick={onClose} className="rufo-canvas-icon-button flex h-11 w-11 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100">
             <X className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
@@ -1128,7 +1130,7 @@ export function AgentSidebar({
           <button
             type="button"
             onClick={() => changeMediaType("image")}
-            className={mediaType === "image" ? "inline-flex h-9 items-center justify-center gap-2 rounded-md bg-white text-xs font-semibold text-slate-900 shadow-sm" : "inline-flex h-9 items-center justify-center gap-2 text-xs text-slate-500"}
+            className={mediaType === "image" ? "inline-flex h-11 items-center justify-center gap-2 rounded-md bg-white text-xs font-semibold text-slate-900 shadow-sm" : "inline-flex h-11 items-center justify-center gap-2 text-xs text-slate-500"}
           >
             <ImagePlus className="h-4 w-4" aria-hidden="true" />
             {copy.image}
@@ -1136,7 +1138,7 @@ export function AgentSidebar({
           <button
             type="button"
             onClick={() => changeMediaType("video")}
-            className={mediaType === "video" ? "inline-flex h-9 items-center justify-center gap-2 rounded-md bg-white text-xs font-semibold text-slate-900 shadow-sm" : "inline-flex h-9 items-center justify-center gap-2 text-xs text-slate-500"}
+            className={mediaType === "video" ? "inline-flex h-11 items-center justify-center gap-2 rounded-md bg-white text-xs font-semibold text-slate-900 shadow-sm" : "inline-flex h-11 items-center justify-center gap-2 text-xs text-slate-500"}
           >
             <Film className="h-4 w-4" aria-hidden="true" />
             {copy.video}
@@ -1169,7 +1171,7 @@ export function AgentSidebar({
             <select
               value={modelId}
               onChange={(event) => setModelId(event.target.value)}
-              className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-900"
+              className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none focus:border-slate-900"
             >
               {visibleModels.map((model) => (
                 <option key={model.id} value={model.id}>
@@ -1216,17 +1218,19 @@ export function AgentSidebar({
                 <button
                   type="button"
                   title="放大编辑提示词"
+                  aria-label="放大编辑提示词"
                   onClick={() => setPromptEditorOpen(true)}
-                  className="inline-flex h-7 items-center gap-1 rounded-md border border-slate-200 bg-white px-2 text-[11px] font-semibold text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                  className="inline-flex h-11 min-w-16 items-center justify-center gap-1 rounded-md border border-slate-200 bg-white px-3 text-[11px] font-semibold text-slate-600 hover:border-slate-300 hover:bg-slate-50"
                 >
                   <Maximize2 className="h-3.5 w-3.5" aria-hidden="true" />
                   放大
                 </button>
                 <button
                   type="button"
+                  aria-label={copy.polish}
                   onClick={handlePolishPrompt}
                   disabled={polishingPrompt}
-                  className="inline-flex h-7 items-center gap-1 rounded-md border border-slate-200 bg-white px-2 text-[11px] font-semibold text-slate-600 hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex h-11 min-w-16 items-center justify-center gap-1 rounded-md border border-slate-200 bg-white px-3 text-[11px] font-semibold text-slate-600 hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {polishingPrompt ? (
                     <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
@@ -1305,7 +1309,7 @@ export function AgentSidebar({
                 <select
                   value={durationSeconds}
                   onChange={(event) => setDurationSeconds(Number(event.target.value))}
-                  className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none"
+                  className="h-11 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm outline-none"
                 >
                   {durationOptions.map((seconds) => (
                     <option key={seconds} value={seconds}>{seconds} {copy.seconds}</option>
@@ -1320,8 +1324,8 @@ export function AgentSidebar({
                   onClick={() => setAudio((current) => !current)}
                   className={
                     audio
-                      ? "flex h-10 w-full items-center justify-between rounded-lg bg-slate-950 px-3 text-xs font-semibold text-white"
-                      : "flex h-10 w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-500 disabled:opacity-40"
+                      ? "flex h-11 w-full items-center justify-between rounded-lg bg-slate-950 px-3 text-xs font-semibold text-white"
+                      : "flex h-11 w-full items-center justify-between rounded-lg border border-slate-200 bg-white px-3 text-xs font-medium text-slate-500 disabled:opacity-40"
                   }
                 >
                   <span>{selectedModel?.supportsAudio ? copy.generateAudio : copy.unsupportedAudio}</span>
@@ -1332,7 +1336,7 @@ export function AgentSidebar({
               </div>
             </div>
           ) : (
-            <div className="flex h-10 items-center justify-between rounded-lg bg-emerald-50 px-3 text-xs font-semibold text-emerald-700">
+            <div className="flex h-11 items-center justify-between rounded-lg bg-emerald-50 px-3 text-xs font-semibold text-emerald-700">
               <span>{copy.supplierQuota}</span>
               <span>{resolveMediaDimensions("image", aspectRatio, quality).width} × {resolveMediaDimensions("image", aspectRatio, quality).height}</span>
             </div>
@@ -1356,8 +1360,8 @@ export function AgentSidebar({
                     }}
                     className={
                       referenceMode === mode
-                        ? "h-9 rounded-md bg-slate-950 px-2 text-xs font-semibold text-white"
-                        : "h-9 rounded-md border border-slate-200 bg-white px-2 text-xs font-medium text-slate-600 hover:border-slate-400"
+                        ? "h-11 rounded-md bg-slate-950 px-3 text-xs font-semibold text-white"
+                        : "h-11 rounded-md border border-slate-200 bg-white px-3 text-xs font-medium text-slate-600 hover:border-slate-400"
                     }
                   >
                     {referenceModeLabel(mode)}
@@ -1381,8 +1385,8 @@ export function AgentSidebar({
                       onClick={() => setReferenceFit(fit)}
                       className={
                         referenceFit === fit
-                          ? "h-9 rounded-md bg-white text-xs font-semibold text-slate-900 shadow-sm"
-                          : "h-9 rounded-md text-xs font-medium text-slate-500"
+                          ? "h-11 rounded-md bg-white text-xs font-semibold text-slate-900 shadow-sm"
+                          : "h-11 rounded-md text-xs font-medium text-slate-500"
                       }
                     >
                       {referenceFitLabel(fit)}
@@ -1440,6 +1444,7 @@ export function AgentSidebar({
                     <button
                       type="button"
                       title="移除参考图"
+                      aria-label="移除参考图"
                       onClick={() =>
                         setCanvasReferences((current) =>
                           current.filter(
@@ -1448,7 +1453,7 @@ export function AgentSidebar({
                           )
                         )
                       }
-                      className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded bg-white/90 text-slate-600 shadow-sm hover:text-red-600"
+                      className="absolute right-1 top-1 flex h-11 w-11 items-center justify-center rounded bg-white/90 text-slate-600 shadow-sm hover:text-red-600"
                     >
                       <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                     </button>
@@ -1477,12 +1482,13 @@ export function AgentSidebar({
                     <button
                       type="button"
                       title="移除参考图"
+                      aria-label="移除参考图"
                       onClick={() =>
                         setReferenceFiles((current) =>
                           current.filter((_, fileIndex) => fileIndex !== index)
                         )
                       }
-                      className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded bg-white/90 text-slate-600 shadow-sm hover:text-red-600"
+                      className="absolute right-1 top-1 flex h-11 w-11 items-center justify-center rounded bg-white/90 text-slate-600 shadow-sm hover:text-red-600"
                     >
                       <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
                     </button>
@@ -1491,6 +1497,7 @@ export function AgentSidebar({
                 {referenceCount < maxReferenceImages ? (
                   <button
                     type="button"
+                    aria-label={copy.addImage}
                     onClick={() => referenceInputRef.current?.click()}
                     className="flex aspect-video items-center justify-center gap-2 rounded-md border border-dashed border-slate-300 bg-slate-50 text-xs font-medium text-slate-500 hover:border-slate-500 hover:text-slate-700"
                   >
@@ -1517,9 +1524,10 @@ export function AgentSidebar({
         <div className="flex items-center justify-between">
           <button
             type="button"
+            aria-label={copy.referenceAssets}
             disabled={referenceMode === "none"}
             onClick={() => referenceInputRef.current?.click()}
-            className="inline-flex h-9 items-center gap-2 rounded-md px-2 text-sm text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-35"
+            className="inline-flex h-11 items-center gap-2 rounded-md px-3 text-sm text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-35"
           >
             {referenceMode === "multi-image" ||
             referenceMode === "keyframes" ||
@@ -1533,8 +1541,9 @@ export function AgentSidebar({
           <button
             form="rufo-generation-form"
             type="submit"
+            aria-label={mediaType === "video" ? copy.generateVideo : copy.generateImage}
             disabled={submitting}
-            className="inline-flex h-10 items-center gap-2 rounded-full bg-slate-950 px-5 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex h-11 items-center gap-2 rounded-full bg-slate-950 px-5 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {submitting ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <SendHorizontal className="h-4 w-4" aria-hidden="true" />}
             {submitting
@@ -1623,8 +1632,9 @@ function PromptEditorDialog({
           <button
             type="button"
             title="关闭"
+            aria-label="关闭"
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+            className="rufo-canvas-icon-button flex h-11 w-11 items-center justify-center rounded-md text-slate-400 hover:bg-slate-100 hover:text-slate-700"
           >
             <X className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -1643,7 +1653,7 @@ function PromptEditorDialog({
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-9 items-center gap-2 rounded-md bg-slate-950 px-4 text-xs font-semibold text-white hover:bg-slate-800"
+            className="inline-flex h-11 items-center gap-2 rounded-md bg-slate-950 px-4 text-xs font-semibold text-white hover:bg-slate-800"
           >
             <Check className="h-3.5 w-3.5" aria-hidden="true" />
             套用并关闭
@@ -1679,8 +1689,9 @@ function GenerationHistoryView({
         <button
           type="button"
           title="刷新历史"
+          aria-label="刷新历史"
           onClick={onRefresh}
-          className="flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100"
+          className="rufo-canvas-icon-button flex h-11 w-11 items-center justify-center rounded-md text-slate-500 hover:bg-slate-100"
         >
           <RefreshCw
             className={loading ? "h-4 w-4 animate-spin" : "h-4 w-4"}
@@ -1768,7 +1779,7 @@ function GenerationHistoryView({
                     <button
                       type="button"
                       onClick={() => onRetry(record)}
-                      className="inline-flex h-8 items-center gap-1 rounded-md border border-slate-200 px-2 text-[10px] font-semibold text-slate-600 hover:bg-slate-50"
+                      className="inline-flex h-11 items-center gap-1 rounded-md border border-slate-200 px-3 text-[10px] font-semibold text-slate-600 hover:bg-slate-50"
                     >
                       <RefreshCw className="h-3 w-3" aria-hidden="true" />
                       再次生成
@@ -1777,7 +1788,7 @@ function GenerationHistoryView({
                       <button
                         type="button"
                         onClick={() => onAddToCanvas(record.media!)}
-                        className="h-8 rounded-md bg-slate-950 px-3 text-[10px] font-semibold text-white"
+                        className="h-11 rounded-md bg-slate-950 px-3 text-[10px] font-semibold text-white"
                       >
                         添加到画布
                       </button>

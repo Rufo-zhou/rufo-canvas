@@ -31,6 +31,7 @@
   --rufo-canvas-border-soft: #f1f5f9;
   --rufo-canvas-button: #0f172a;
   --rufo-canvas-button-fg: #ffffff;
+  --rufo-canvas-accent: #2563eb;
   --rufo-canvas-shadow: rgb(15 23 42 / 0.13);
   --rufo-canvas-grid: #d8dde5;
   --rufo-canvas-media-bg: rgb(15 23 42 / 0.05);
@@ -65,6 +66,7 @@ html[data-rufo-theme="dark"] {
   --rufo-canvas-border-soft: rgb(148 163 184 / 0.14);
   --rufo-canvas-button: #f8fafc;
   --rufo-canvas-button-fg: #020617;
+  --rufo-canvas-accent: #38bdf8;
   --rufo-canvas-shadow: rgb(0 0 0 / 0.42);
   --rufo-canvas-grid: rgb(148 163 184 / 0.18);
   --rufo-canvas-media-bg: rgb(255 255 255 / 0.045);
@@ -136,6 +138,7 @@ select {
 
 .rufo-home-grid button,
 .rufo-canvas button {
+  cursor: pointer;
   transition:
     background-color 160ms ease,
     border-color 160ms ease,
@@ -148,6 +151,31 @@ select {
 .rufo-home-grid button:active,
 .rufo-canvas button:active {
   transform: translateY(1px) scale(0.98);
+}
+
+.rufo-home-grid button:focus-visible,
+.rufo-home-grid a:focus-visible,
+.rufo-canvas button:focus-visible,
+.rufo-canvas a:focus-visible,
+.rufo-canvas input:focus-visible,
+.rufo-canvas textarea:focus-visible,
+.rufo-canvas select:focus-visible {
+  outline: 2px solid var(--rufo-canvas-accent);
+  outline-offset: 3px;
+}
+
+.rufo-canvas button:disabled {
+  cursor: not-allowed;
+}
+
+.rufo-canvas-icon-button {
+  min-width: 44px;
+  min-height: 44px;
+  touch-action: manipulation;
+}
+
+.rufo-canvas-status-live {
+  min-height: 18px;
 }
 
 .rufo-hide-scrollbar {
@@ -317,13 +345,21 @@ html[data-rufo-theme="dark"] .rufo-canvas .bg-black\/75 {
   .rufo-generation-pulse {
     animation: none;
   }
+
+  .rufo-home-grid button,
+  .rufo-canvas button,
+  .rufo-home-composer {
+    transition-duration: 1ms;
+  }
 }
 
 .rufo-flow-handle {
-  width: 64px !important;
-  height: 64px !important;
+  width: 88px !important;
+  height: 88px !important;
   border: 0 !important;
   background: transparent !important;
+  cursor: crosshair !important;
+  touch-action: none;
   z-index: 30 !important;
 }
 
@@ -331,13 +367,15 @@ html[data-rufo-theme="dark"] .rufo-canvas .bg-black\/75 {
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   content: "";
   border: 2px solid #ffffff;
   border-radius: 9999px;
-  background: #0f172a;
-  box-shadow: 0 8px 18px rgb(15 23 42 / 18%);
+  background: var(--rufo-canvas-button);
+  box-shadow:
+    0 10px 24px rgb(15 23 42 / 22%),
+    0 0 0 8px color-mix(in srgb, var(--rufo-canvas-accent) 12%, transparent);
   opacity: 0;
   transform: translate(-50%, -50%) scale(0.86);
   transition:
@@ -347,23 +385,32 @@ html[data-rufo-theme="dark"] .rufo-canvas .bg-black\/75 {
 
 .rufo-flow-handle::before {
   position: absolute;
-  inset: 8px;
+  inset: 12px;
   content: "";
   border-radius: 9999px;
-  background: rgb(14 165 233 / 0.08);
+  border: 1px solid color-mix(in srgb, var(--rufo-canvas-accent) 34%, transparent);
+  background: color-mix(in srgb, var(--rufo-canvas-accent) 10%, transparent);
   opacity: 0;
-  transition: opacity 140ms ease;
+  transform: scale(0.9);
+  transition:
+    opacity 140ms ease,
+    transform 140ms ease;
 }
 
 .group:hover .rufo-flow-handle-muted::after,
+.rufo-flow-handle:focus-visible::after,
+.rufo-flow-handle:hover::after,
 .rufo-flow-handle-visible::after {
   opacity: 1;
   transform: translate(-50%, -50%) scale(1);
 }
 
 .group:hover .rufo-flow-handle-muted::before,
+.rufo-flow-handle:focus-visible::before,
+.rufo-flow-handle:hover::before,
 .rufo-flow-handle-visible::before {
   opacity: 1;
+  transform: scale(1);
 }
 
 .rufo-generation-scan {

@@ -56,11 +56,12 @@ export function GenerationTaskNode({ id, data, selected }: NodeProps<CanvasNode>
                   {data.errorSolution}
                 </p>
               ) : null}
-              <button
-                type="button"
-                onClick={() => actions?.onRetryGeneration(id)}
-                className="nodrag mt-2 inline-flex h-7 items-center gap-1 rounded bg-white px-2 text-[10px] font-semibold text-red-700 shadow-sm"
-              >
+            <button
+              type="button"
+              aria-label="重新生成"
+              onClick={() => actions?.onRetryGeneration(id)}
+              className="nodrag mt-2 inline-flex h-7 items-center gap-1 rounded bg-white px-2 text-[10px] font-semibold text-red-700 shadow-sm"
+            >
                 <RotateCcw className="h-3 w-3" aria-hidden="true" />
                 重试
               </button>
@@ -68,8 +69,9 @@ export function GenerationTaskNode({ id, data, selected }: NodeProps<CanvasNode>
           ) : draft ? (
             <button
               type="button"
+              aria-label="配置生成"
               onClick={() => actions?.onRetryGeneration(id)}
-              className="nodrag inline-flex items-center gap-2 rounded-full bg-slate-950/90 px-3 py-2 text-xs font-semibold text-white shadow-lg"
+              className="nodrag rufo-canvas-icon-button inline-flex items-center gap-2 rounded-full bg-slate-950/90 px-4 py-2 text-xs font-semibold text-white shadow-lg"
             >
               <Sparkles className="h-4 w-4" aria-hidden="true" />
               配置生成

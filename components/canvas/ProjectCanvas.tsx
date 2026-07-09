@@ -1690,7 +1690,7 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
 
         <header className="pointer-events-none absolute left-0 right-0 top-0 z-30 flex h-12 items-center justify-between px-4">
           <div className="pointer-events-auto flex items-center gap-3">
-            <Link href="/projects" title={copy.topbar.back} className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-950 text-white shadow-sm">
+            <Link href="/projects" title={copy.topbar.back} aria-label={copy.topbar.back} className="rufo-canvas-icon-button flex h-11 w-11 items-center justify-center rounded-full bg-slate-950 text-white shadow-sm">
               <ArrowLeft className="h-4 w-4" aria-hidden="true" />
             </Link>
             <form
@@ -1708,7 +1708,7 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
                   setRenamingProject(false);
                   void handleRenameProject();
                 }}
-                className="h-8 w-44 rounded-md border border-transparent bg-transparent px-2 text-sm font-semibold text-slate-800 outline-none hover:border-slate-200 hover:bg-white focus:border-slate-300 focus:bg-white"
+                className="h-10 w-44 rounded-md border border-transparent bg-transparent px-2 text-sm font-semibold text-slate-800 outline-none hover:border-slate-200 hover:bg-white focus:border-slate-300 focus:bg-white"
                 aria-label={copy.topbar.projectName}
                 title={copy.topbar.editProjectName}
               />
@@ -1716,7 +1716,8 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
                 <button
                   type="submit"
                   title={copy.topbar.saveProjectName}
-                  className="flex h-8 w-8 items-center justify-center rounded-md text-slate-500 hover:bg-white"
+                  aria-label={copy.topbar.saveProjectName}
+                  className="rufo-canvas-icon-button flex h-10 w-10 items-center justify-center rounded-md text-slate-500 hover:bg-white"
                 >
                   <Check className="h-4 w-4" aria-hidden="true" />
                 </button>
@@ -1728,27 +1729,30 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
               type="button"
               onClick={() => void handleSave()}
               disabled={saving}
-              className="inline-flex h-8 items-center gap-2 rounded-lg bg-white px-3 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-60"
+              aria-label={saving ? copy.topbar.saving : copy.topbar.save}
+              className="inline-flex h-11 min-w-24 items-center justify-center gap-2 rounded-lg bg-white px-3 text-xs font-medium text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-60"
             >
               {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : <Save className="h-3.5 w-3.5" aria-hidden="true" />}
               {saving ? copy.topbar.saving : copy.topbar.save}
             </button>
             <span
+              role="status"
+              aria-live="polite"
               className={
                 autosaveState === "error"
-                  ? "text-xs text-red-600 max-sm:hidden"
+                  ? "rufo-canvas-status-live text-xs text-red-600 max-sm:hidden"
                   : autosaveState === "dirty"
-                    ? "text-xs text-amber-600 max-sm:hidden"
+                    ? "rufo-canvas-status-live text-xs text-amber-600 max-sm:hidden"
                     : autosaveState === "saving"
-                      ? "text-xs text-blue-600 max-sm:hidden"
-                      : "text-xs text-slate-400 max-sm:hidden"
+                      ? "rufo-canvas-status-live text-xs text-blue-600 max-sm:hidden"
+                      : "rufo-canvas-status-live text-xs text-slate-400 max-sm:hidden"
               }
             >
               {copy.autosave[autosaveState]}
             </span>
-            {uploading ? <span className="text-xs text-blue-600 max-sm:hidden">{copy.topbar.uploading}</span> : null}
-            {status ? <span className="text-xs text-emerald-600 max-sm:hidden">{status}</span> : null}
-            {error ? <span className="max-w-96 truncate text-xs text-red-600 max-md:hidden">{error}</span> : null}
+            {uploading ? <span role="status" aria-live="polite" className="text-xs text-blue-600 max-sm:hidden">{copy.topbar.uploading}</span> : null}
+            {status ? <span role="status" aria-live="polite" className="text-xs text-emerald-600 max-sm:hidden">{status}</span> : null}
+            {error ? <span role="alert" className="max-w-96 truncate text-xs text-red-600 max-md:hidden">{error}</span> : null}
           </div>
 
           <div className="pointer-events-auto flex items-center gap-3 text-xs font-medium text-slate-500">
@@ -1762,24 +1766,27 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
             <button
               type="button"
               title={copy.topbar.help}
+              aria-label={copy.topbar.help}
               onClick={() => setHelpDialogOpen(true)}
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50"
+              className="rufo-canvas-icon-button flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50"
             >
               <HelpCircle className="h-4 w-4" aria-hidden="true" />
             </button>
             <button
               type="button"
               title={copy.topbar.share}
+              aria-label={copy.topbar.share}
               onClick={() => setShareDialogOpen(true)}
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50"
+              className="rufo-canvas-icon-button flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50"
             >
               <Share2 className="h-4 w-4" aria-hidden="true" />
             </button>
             <button
               type="button"
               title={copy.topbar.exportJson}
+              aria-label={copy.topbar.exportJson}
               onClick={handleExportCanvas}
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50"
+              className="rufo-canvas-icon-button flex h-11 w-11 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-500 shadow-sm hover:bg-slate-50"
             >
               <FileJson className="h-4 w-4" aria-hidden="true" />
             </button>
@@ -1787,7 +1794,7 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
               <Zap className="h-3.5 w-3.5 fill-lime-400 text-lime-500" aria-hidden="true" />
               {copy.topbar.multiModel}
             </span>
-            <button type="button" title={copy.topbar.modelStatus} onClick={() => setModelStatusOpen(true)} className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-500 text-white shadow-sm">
+            <button type="button" title={copy.topbar.modelStatus} aria-label={copy.topbar.modelStatus} onClick={() => setModelStatusOpen(true)} className="rufo-canvas-icon-button flex h-11 w-11 items-center justify-center rounded-full bg-blue-500 text-white shadow-sm">
               <Gift className="h-4 w-4" aria-hidden="true" />
             </button>
             <UserMenu />
@@ -1909,18 +1916,20 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
           <button
             type="button"
             title={copy.canvas.undo}
+            aria-label={copy.canvas.undo}
             disabled={!canUndo}
             onClick={undo}
-            className="rounded-md p-1.5 hover:bg-white disabled:cursor-not-allowed disabled:opacity-30"
+            className="rufo-canvas-icon-button rounded-md p-2.5 hover:bg-white disabled:cursor-not-allowed disabled:opacity-30"
           >
             <Undo2 className="h-4 w-4" aria-hidden="true" />
           </button>
           <button
             type="button"
             title={copy.canvas.redo}
+            aria-label={copy.canvas.redo}
             disabled={!canRedo}
             onClick={redo}
-            className="rounded-md p-1.5 hover:bg-white disabled:cursor-not-allowed disabled:opacity-30"
+            className="rufo-canvas-icon-button rounded-md p-2.5 hover:bg-white disabled:cursor-not-allowed disabled:opacity-30"
           >
             <Redo2 className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -1928,24 +1937,27 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
           <button
             type="button"
             title={copy.canvas.zoomOut}
+            aria-label={copy.canvas.zoomOut}
             onClick={() => void flow?.zoomOut({ duration: 160 })}
-            className="rounded-md p-1.5 hover:bg-white"
+            className="rufo-canvas-icon-button rounded-md p-2.5 hover:bg-white"
           >
             <Minus className="h-4 w-4" aria-hidden="true" />
           </button>
           <button
             type="button"
             title={copy.canvas.zoomIn}
+            aria-label={copy.canvas.zoomIn}
             onClick={() => void flow?.zoomIn({ duration: 160 })}
-            className="rounded-md p-1.5 hover:bg-white"
+            className="rufo-canvas-icon-button rounded-md p-2.5 hover:bg-white"
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
           </button>
           <button
             type="button"
             title={copy.canvas.fitView}
+            aria-label={copy.canvas.fitView}
             onClick={() => void flow?.fitView({ padding: 0.18, duration: 260 })}
-            className="rounded-md p-1.5 hover:bg-white"
+            className="rufo-canvas-icon-button rounded-md p-2.5 hover:bg-white"
           >
             <Maximize2 className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -1953,24 +1965,27 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
           <button
             type="button"
             title={copy.canvas.minimap}
+            aria-label={copy.canvas.minimap}
             onClick={() => setMiniMapVisible((current) => !current)}
-            className={miniMapVisible ? "rounded-md bg-slate-900 p-1.5 text-white" : "rounded-md p-1.5 hover:bg-white"}
+            className={miniMapVisible ? "rufo-canvas-icon-button rounded-md bg-slate-900 p-2.5 text-white" : "rufo-canvas-icon-button rounded-md p-2.5 hover:bg-white"}
           >
             <Circle className="h-4 w-4" aria-hidden="true" />
           </button>
           <button
             type="button"
             title={copy.canvas.layers}
+            aria-label={copy.canvas.layers}
             onClick={() => setFloatingPanel((current) => (current === "layers" ? null : "layers"))}
-            className={floatingPanel === "layers" ? "rounded-md bg-slate-900 p-1.5 text-white" : "rounded-md p-1.5 hover:bg-white"}
+            className={floatingPanel === "layers" ? "rufo-canvas-icon-button rounded-md bg-slate-900 p-2.5 text-white" : "rufo-canvas-icon-button rounded-md p-2.5 hover:bg-white"}
           >
             <Layers className="h-4 w-4" aria-hidden="true" />
           </button>
           <button
             type="button"
             title={copy.canvas.assets}
+            aria-label={copy.canvas.assets}
             onClick={() => setFloatingPanel((current) => (current === "assets" ? null : "assets"))}
-            className={floatingPanel === "assets" ? "rounded-md bg-slate-900 p-1.5 text-white" : "rounded-md p-1.5 hover:bg-white"}
+            className={floatingPanel === "assets" ? "rufo-canvas-icon-button rounded-md bg-slate-900 p-2.5 text-white" : "rufo-canvas-icon-button rounded-md p-2.5 hover:bg-white"}
           >
             <Download className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -2004,11 +2019,12 @@ function ProjectCanvasContent({ projectId, initialPrompt }: ProjectCanvasProps) 
                 key={tool.id}
                 type="button"
                 title={copy.tools[tool.id]}
+                aria-label={copy.tools[tool.id]}
                 onClick={() => handleTool(tool.id)}
                 className={
                   active
-                    ? "flex h-9 w-9 items-center justify-center rounded-md bg-slate-900 text-white"
-                    : "flex h-9 w-9 items-center justify-center rounded-md text-slate-600 hover:bg-slate-100"
+                    ? "rufo-canvas-icon-button flex h-11 w-11 items-center justify-center rounded-md bg-slate-900 text-white"
+                    : "rufo-canvas-icon-button flex h-11 w-11 items-center justify-center rounded-md text-slate-600 hover:bg-slate-100"
                 }
               >
                 <Icon className="h-4 w-4" aria-hidden="true" />

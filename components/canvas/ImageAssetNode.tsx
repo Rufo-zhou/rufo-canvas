@@ -74,19 +74,21 @@ export function ImageAssetNode({ id, data, selected }: NodeProps<CanvasNode>) {
           <button
             type="button"
             title="保存名称"
+            aria-label="保存名称"
             onClick={commitName}
-            className="flex h-8 w-8 items-center justify-center rounded text-emerald-600 hover:bg-emerald-50"
+            className="rufo-canvas-icon-button flex h-10 w-10 items-center justify-center rounded text-emerald-600 hover:bg-emerald-50"
           >
             <Check className="h-4 w-4" aria-hidden="true" />
           </button>
           <button
             type="button"
             title={data.objectFit === "cover" ? "恢复完整适应" : "裁切"}
+            aria-label={data.objectFit === "cover" ? "恢复完整适应" : "裁切"}
             onClick={() => actions?.onEditMedia(id, "crop")}
             className={
               data.objectFit === "cover"
-                ? "flex h-8 w-8 items-center justify-center rounded bg-slate-950 text-white"
-                : "flex h-8 w-8 items-center justify-center rounded text-slate-600 hover:bg-slate-100"
+                ? "rufo-canvas-icon-button flex h-10 w-10 items-center justify-center rounded bg-slate-950 text-white"
+                : "rufo-canvas-icon-button flex h-10 w-10 items-center justify-center rounded text-slate-600 hover:bg-slate-100"
             }
           >
             <Crop className="h-4 w-4" aria-hidden="true" />
@@ -94,48 +96,54 @@ export function ImageAssetNode({ id, data, selected }: NodeProps<CanvasNode>) {
           <button
             type="button"
             title="涂鸦"
+            aria-label="涂鸦"
             onClick={() => actions?.onEditMedia(id, "doodle")}
-            className="flex h-8 w-8 items-center justify-center rounded text-slate-600 hover:bg-slate-100"
+            className="rufo-canvas-icon-button flex h-10 w-10 items-center justify-center rounded text-slate-600 hover:bg-slate-100"
           >
             <PenLine className="h-4 w-4" aria-hidden="true" />
           </button>
           <button
             type="button"
             title="框选"
+            aria-label="框选"
             onClick={() => actions?.onEditMedia(id, "selection")}
-            className="flex h-8 w-8 items-center justify-center rounded text-slate-600 hover:bg-slate-100"
+            className="rufo-canvas-icon-button flex h-10 w-10 items-center justify-center rounded text-slate-600 hover:bg-slate-100"
           >
             <SquareDashedMousePointer className="h-4 w-4" aria-hidden="true" />
           </button>
           <button
             type="button"
             title="添加文字"
+            aria-label="添加文字"
             onClick={() => actions?.onEditMedia(id, "text")}
-            className="flex h-8 w-8 items-center justify-center rounded text-slate-600 hover:bg-slate-100"
+            className="rufo-canvas-icon-button flex h-10 w-10 items-center justify-center rounded text-slate-600 hover:bg-slate-100"
           >
             <Type className="h-4 w-4" aria-hidden="true" />
           </button>
           <button
             type="button"
             title="全屏预览"
+            aria-label="全屏预览"
             onClick={() => actions?.onOpenPreview(id)}
-            className="flex h-8 w-8 items-center justify-center rounded text-slate-600 hover:bg-slate-100"
+            className="rufo-canvas-icon-button flex h-10 w-10 items-center justify-center rounded text-slate-600 hover:bg-slate-100"
           >
             <Maximize2 className="h-4 w-4" aria-hidden="true" />
           </button>
           <button
             type="button"
             title="作为参考继续生成"
+            aria-label="作为参考继续生成"
             onClick={() => actions?.onUseAsReference(id)}
-            className="flex h-8 w-8 items-center justify-center rounded text-slate-600 hover:bg-slate-100"
+            className="rufo-canvas-icon-button flex h-10 w-10 items-center justify-center rounded text-slate-600 hover:bg-slate-100"
           >
             <Sparkles className="h-4 w-4" aria-hidden="true" />
           </button>
           <button
             type="button"
             title="复制"
+            aria-label="复制"
             onClick={() => actions?.onDuplicate(id)}
-            className="flex h-8 w-8 items-center justify-center rounded text-slate-600 hover:bg-slate-100"
+            className="rufo-canvas-icon-button flex h-10 w-10 items-center justify-center rounded text-slate-600 hover:bg-slate-100"
           >
             <Copy className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -144,7 +152,8 @@ export function ImageAssetNode({ id, data, selected }: NodeProps<CanvasNode>) {
               href={assetUrl}
               download={data.label}
               title="下载"
-              className="flex h-8 w-8 items-center justify-center rounded text-slate-600 hover:bg-slate-100"
+              aria-label="下载"
+              className="rufo-canvas-icon-button flex h-10 w-10 items-center justify-center rounded text-slate-600 hover:bg-slate-100"
             >
               <Download className="h-4 w-4" aria-hidden="true" />
             </a>
@@ -152,8 +161,9 @@ export function ImageAssetNode({ id, data, selected }: NodeProps<CanvasNode>) {
           <button
             type="button"
             title="删除"
+            aria-label="删除"
             onClick={() => actions?.onDelete(id)}
-            className="flex h-8 w-8 items-center justify-center rounded text-slate-500 hover:bg-red-50 hover:text-red-600"
+            className="rufo-canvas-icon-button flex h-10 w-10 items-center justify-center rounded text-slate-500 hover:bg-red-50 hover:text-red-600"
           >
             <Trash2 className="h-4 w-4" aria-hidden="true" />
           </button>
@@ -164,8 +174,8 @@ export function ImageAssetNode({ id, data, selected }: NodeProps<CanvasNode>) {
         <div
           className={
             selected
-              ? "media-drag-handle absolute left-1/2 top-2 z-10 flex h-7 w-12 -translate-x-1/2 cursor-grab items-center justify-center rounded bg-black/55 text-white shadow-sm active:cursor-grabbing"
-              : "media-drag-handle absolute left-1/2 top-2 z-10 flex h-7 w-12 -translate-x-1/2 cursor-grab items-center justify-center rounded bg-black/55 text-white opacity-0 shadow-sm transition-opacity group-hover:opacity-100 active:cursor-grabbing"
+              ? "media-drag-handle absolute left-1/2 top-2 z-10 flex h-11 w-14 -translate-x-1/2 cursor-grab items-center justify-center rounded bg-black/55 text-white shadow-sm active:cursor-grabbing"
+              : "media-drag-handle absolute left-1/2 top-2 z-10 flex h-11 w-14 -translate-x-1/2 cursor-grab items-center justify-center rounded bg-black/55 text-white opacity-0 shadow-sm transition-opacity group-hover:opacity-100 active:cursor-grabbing"
           }
           title="拖动视频"
         >
