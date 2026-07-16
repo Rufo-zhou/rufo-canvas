@@ -129,6 +129,9 @@ type AgentCopy = {
   connectApi: string;
   prompt: string;
   polish: string;
+  seedanceOptimize: string;
+  videoPromptTools: string;
+  videoPromptToolsHint: string;
   imagePlaceholder: string;
   videoPlaceholder: string;
   aspectRatio: string;
@@ -169,6 +172,9 @@ const agentCopyByLanguage: Record<RufoLanguage, AgentCopy> = {
     connectApi: "接入 API",
     prompt: "画面描述",
     polish: "润色",
+    seedanceOptimize: "Seedance 优化",
+    videoPromptTools: "视频快捷镜头",
+    videoPromptToolsHint: "先点快捷镜头补充动作，再点 Seedance 优化生成完整视频提示词。",
     imagePlaceholder: "描述主体、构图、光线、材质和风格",
     videoPlaceholder: "描述主体、动作、镜头运动、光线和风格",
     aspectRatio: "画面比例",
@@ -207,6 +213,9 @@ const agentCopyByLanguage: Record<RufoLanguage, AgentCopy> = {
     connectApi: "Connect API",
     prompt: "Prompt",
     polish: "Polish",
+    seedanceOptimize: "Seedance optimize",
+    videoPromptTools: "Video shortcuts",
+    videoPromptToolsHint: "Add a shortcut first, then optimize it into a complete Seedance prompt.",
     imagePlaceholder: "Describe subject, composition, lighting, materials, and style",
     videoPlaceholder: "Describe subject, action, camera movement, lighting, and style",
     aspectRatio: "Aspect ratio",
@@ -245,6 +254,9 @@ const agentCopyByLanguage: Record<RufoLanguage, AgentCopy> = {
     connectApi: "API 接続",
     prompt: "プロンプト",
     polish: "改善",
+    seedanceOptimize: "Seedance 最適化",
+    videoPromptTools: "動画ショートカット",
+    videoPromptToolsHint: "先にショートカットを追加し、Seedance 最適化で完成した動画プロンプトにします。",
     imagePlaceholder: "主体、構図、光、素材、スタイルを記述",
     videoPlaceholder: "主体、動き、カメラ、光、スタイルを記述",
     aspectRatio: "比率",
@@ -283,6 +295,9 @@ const agentCopyByLanguage: Record<RufoLanguage, AgentCopy> = {
     connectApi: "API 연결",
     prompt: "프롬프트",
     polish: "다듬기",
+    seedanceOptimize: "Seedance 최적화",
+    videoPromptTools: "비디오 바로가기",
+    videoPromptToolsHint: "먼저 바로가기를 추가한 뒤 Seedance 최적화로 완성된 비디오 프롬프트를 만드세요.",
     imagePlaceholder: "대상, 구도, 조명, 재질, 스타일을 설명하세요",
     videoPlaceholder: "대상, 동작, 카메라 움직임, 조명, 스타일을 설명하세요",
     aspectRatio: "비율",
@@ -326,6 +341,13 @@ type SkillPreset = {
   quality: MediaQuality;
   referenceMode?: MediaReferenceMode;
   preferredModelIds: string[];
+};
+
+type VideoPromptBooster = {
+  id: string;
+  label: string;
+  description: string;
+  prompt: string;
 };
 
 const fallbackModels: ModelOption[] = [
@@ -447,6 +469,161 @@ const skillPresets: SkillPreset[] = [
   }
 ];
 
+const videoPromptBoostersByLanguage: Record<
+  RufoLanguage,
+  VideoPromptBooster[]
+> = {
+  "zh-CN": [
+    {
+      id: "motivated-push",
+      label: "镜头推进",
+      description: "从环境推到关键细节",
+      prompt:
+        "镜头设计：从中景缓慢推进到主体关键细节，推进必须揭示新的信息，最后停在一个可截图的稳定画面。"
+    },
+    {
+      id: "product-arc",
+      label: "产品环绕",
+      description: "突出材质与卖点",
+      prompt:
+        "产品运镜：摄像机围绕主体做 20-35 度轻微弧形移动，保持产品几何不变形，光线扫过材质并突出核心卖点。"
+    },
+    {
+      id: "character-action",
+      label: "人物动作",
+      description: "稳定身份与手部",
+      prompt:
+        "动作编排：人物只执行一个清晰连续动作，面部身份、手部结构和服装细节保持一致，动作节奏自然且不突然跳变。"
+    },
+    {
+      id: "start-end",
+      label: "首尾帧",
+      description: "让参考图自然过渡",
+      prompt:
+        "参考图要求：从起始参考画面的构图和主体身份出发，平滑过渡到目标动作或终止画面，禁止挤压参考图比例。"
+    },
+    {
+      id: "social-hook",
+      label: "短视频节奏",
+      description: "前三秒建立吸引点",
+      prompt:
+        "节奏设计：前 1 秒建立视觉钩子，中段完成主体动作或卖点展示，最后 1-2 秒停留在清晰、有记忆点的结束画面。"
+    }
+  ],
+  en: [
+    {
+      id: "motivated-push",
+      label: "Push-in",
+      description: "Reveal one key detail",
+      prompt:
+        "Camera design: start from a medium shot and slowly push toward the subject's key detail; the move must reveal new information and end on a stable frame."
+    },
+    {
+      id: "product-arc",
+      label: "Product arc",
+      description: "Show material and value",
+      prompt:
+        "Product camera move: make a subtle 20-35 degree arc around the subject, keep product geometry unchanged, and let light reveal material and the core selling point."
+    },
+    {
+      id: "character-action",
+      label: "Character action",
+      description: "Keep identity stable",
+      prompt:
+        "Motion choreography: the character performs one clear continuous action; keep facial identity, hand structure, and wardrobe details consistent without sudden jumps."
+    },
+    {
+      id: "start-end",
+      label: "Keyframes",
+      description: "Bridge references",
+      prompt:
+        "Reference requirement: begin from the starting reference composition and subject identity, then transition smoothly to the target action or ending frame without squeezing the reference ratio."
+    },
+    {
+      id: "social-hook",
+      label: "Social beat",
+      description: "Hook in the first second",
+      prompt:
+        "Rhythm design: establish a visual hook in the first second, complete the action or value reveal in the middle, then hold a clear memorable final frame for 1-2 seconds."
+    }
+  ],
+  ja: [
+    {
+      id: "motivated-push",
+      label: "プッシュ",
+      description: "重要な細部を見せる",
+      prompt:
+        "カメラ設計：ミディアムショットから主体の重要な細部へゆっくり近づき、新しい情報を見せて、最後は安定したフレームで止める。"
+    },
+    {
+      id: "product-arc",
+      label: "商品アーク",
+      description: "素材と訴求点を強調",
+      prompt:
+        "商品カメラ：主体の周囲を 20-35 度だけ緩やかに回り、商品の形状を変形させず、光で素材と主要な訴求点を見せる。"
+    },
+    {
+      id: "character-action",
+      label: "人物動作",
+      description: "同一性を安定",
+      prompt:
+        "動作設計：人物は一つの明確で連続した動作だけを行い、顔の同一性、手の構造、衣装の細部を安定させ、急なジャンプを避ける。"
+    },
+    {
+      id: "start-end",
+      label: "キーフレーム",
+      description: "参照を自然につなぐ",
+      prompt:
+        "参照要件：開始参照の構図と主体の同一性から始め、目標動作または終了フレームへ滑らかに移行し、参照比率を押しつぶさない。"
+    },
+    {
+      id: "social-hook",
+      label: "SNS リズム",
+      description: "最初の1秒で引き込む",
+      prompt:
+        "リズム設計：最初の1秒で視覚的なフックを作り、中盤で動作または価値を見せ、最後の1-2秒は記憶に残る明瞭な終了画面で止める。"
+    }
+  ],
+  ko: [
+    {
+      id: "motivated-push",
+      label: "푸시인",
+      description: "핵심 디테일 공개",
+      prompt:
+        "카메라 설계: 미디엄 샷에서 시작해 대상의 핵심 디테일로 천천히 다가가며, 움직임은 새로운 정보를 드러내고 마지막에는 안정적인 프레임에 멈춘다."
+    },
+    {
+      id: "product-arc",
+      label: "제품 아크",
+      description: "재질과 장점 강조",
+      prompt:
+        "제품 카메라: 대상 주변을 20-35도 정도 부드럽게 아크 이동하며 제품 형태를 왜곡하지 않고, 빛이 재질과 핵심 장점을 드러내게 한다."
+    },
+    {
+      id: "character-action",
+      label: "인물 동작",
+      description: "정체성 안정",
+      prompt:
+        "동작 설계: 인물은 하나의 명확하고 연속적인 동작만 수행하며, 얼굴 정체성, 손 구조, 의상 디테일을 유지하고 갑작스러운 점프를 피한다."
+    },
+    {
+      id: "start-end",
+      label: "키프레임",
+      description: "참조 자연 연결",
+      prompt:
+        "참조 요구: 시작 참조의 구도와 대상 정체성에서 출발해 목표 동작 또는 종료 프레임으로 부드럽게 전환하며 참조 비율을 찌그러뜨리지 않는다."
+    },
+    {
+      id: "social-hook",
+      label: "숏폼 리듬",
+      description: "첫 1초 후킹",
+      prompt:
+        "리듬 설계: 첫 1초에 시각적 훅을 만들고, 중간에는 동작 또는 가치 포인트를 보여주며, 마지막 1-2초는 선명하고 기억에 남는 종료 프레임으로 유지한다."
+    }
+  ]
+};
+
+
 export function AgentSidebar({
   projectId,
   initialPrompt,
@@ -462,6 +639,7 @@ export function AgentSidebar({
   const { mode: appMode, user, getAccessToken } = useAuth();
   const { language } = usePreferences();
   const copy = agentCopyByLanguage[language];
+  const videoPromptBoosters = videoPromptBoostersByLanguage[language];
   const supabase = useMemo(
     () => (appMode === "supabase" ? getSupabaseBrowserClient() : null),
     [appMode]
@@ -536,6 +714,8 @@ export function AgentSidebar({
     mediaType === "video" &&
     visibleModels.length > 0 &&
     visibleModels.every((model) => !model.available);
+  const promptPolishLabel =
+    mediaType === "video" ? copy.seedanceOptimize : copy.polish;
 
   useEffect(() => {
     if (initialPrompt) {
@@ -1006,8 +1186,13 @@ export function AgentSidebar({
           mediaType,
           aspectRatio,
           quality,
+          modelId: selectedModel?.id,
           modelLabel: selectedModel?.label,
-          referenceMode
+          referenceMode,
+          referenceFit,
+          durationSeconds: mediaType === "video" ? durationSeconds : undefined,
+          audio: mediaType === "video" ? audio : undefined,
+          optimizationMode: mediaType === "video" ? "seedance-video" : "general"
         })
       });
       const payload = (await response.json()) as {
@@ -1030,6 +1215,25 @@ export function AgentSidebar({
     } finally {
       setPolishingPrompt(false);
     }
+  }
+
+  function applyVideoPromptBooster(booster: VideoPromptBooster) {
+    setPrompt((current) => {
+      const trimmedCurrent = current.trim();
+
+      if (!trimmedCurrent) {
+        return booster.prompt;
+      }
+
+      if (trimmedCurrent.includes(booster.prompt)) {
+        return current;
+      }
+
+      return `${trimmedCurrent}\n\n${booster.prompt}`;
+    });
+    setError(null);
+    setErrorSolution(null);
+    window.setTimeout(() => promptRef.current?.focus(), 0);
   }
 
   function changeMediaType(nextType: MediaType) {
@@ -1227,7 +1431,8 @@ export function AgentSidebar({
                 </button>
                 <button
                   type="button"
-                  aria-label={copy.polish}
+                  title={promptPolishLabel}
+                  aria-label={promptPolishLabel}
                   onClick={handlePolishPrompt}
                   disabled={polishingPrompt}
                   className="inline-flex h-11 min-w-16 items-center justify-center gap-1 rounded-md border border-slate-200 bg-white px-3 text-[11px] font-semibold text-slate-600 hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
@@ -1237,7 +1442,7 @@ export function AgentSidebar({
                   ) : (
                     <WandSparkles className="h-3.5 w-3.5" aria-hidden="true" />
                   )}
-                  {copy.polish}
+                  {promptPolishLabel}
                 </button>
               </span>
             </span>
@@ -1249,6 +1454,40 @@ export function AgentSidebar({
               placeholder={mediaType === "video" ? copy.videoPlaceholder : copy.imagePlaceholder}
             />
           </label>
+
+          {mediaType === "video" ? (
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-2">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <span className="text-xs font-semibold text-slate-700">
+                  {copy.videoPromptTools}
+                </span>
+                <span className="rounded bg-white px-2 py-1 text-[10px] font-semibold text-slate-500">
+                  Seedance 2.0
+                </span>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {videoPromptBoosters.map((booster) => (
+                  <button
+                    key={booster.id}
+                    type="button"
+                    title={booster.description}
+                    onClick={() => applyVideoPromptBooster(booster)}
+                    className="min-h-14 rounded-md border border-slate-200 bg-white px-2 py-2 text-left hover:border-slate-300 hover:bg-slate-50"
+                  >
+                    <span className="block text-xs font-semibold text-slate-800">
+                      {booster.label}
+                    </span>
+                    <span className="mt-0.5 block text-[10px] leading-4 text-slate-400">
+                      {booster.description}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <p className="mt-2 text-[10px] leading-4 text-slate-500">
+                {copy.videoPromptToolsHint}
+              </p>
+            </div>
+          ) : null}
 
           <div>
             <span className="mb-2 block text-xs font-medium text-slate-600">{copy.aspectRatio}</span>
