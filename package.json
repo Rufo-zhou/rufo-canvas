@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit",
-    "preflight": "node scripts/preflight.mjs"
+    "preflight": "node scripts/preflight.mjs",
+    "verify": "tsc --noEmit && eslint . --max-warnings=0 && node scripts/preflight.mjs && next build"
   },
   "overrides": {
     "postcss": "8.5.15"

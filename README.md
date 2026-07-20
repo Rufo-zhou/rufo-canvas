@@ -107,11 +107,19 @@ On the maintainer's Mac, `scripts/com.rufo.canvas.plist` can be installed as a L
 ## Checks
 
 ```bash
+npm run verify
+```
+
+`verify` runs the full launch gate:
+
+```bash
 npm run typecheck
 npm run lint
-npm run build
 npm run preflight
+npm run build
 ```
+
+Before a public release, also run `npm audit --audit-level=high` in a normal Node/npm environment. The Codex bundled runtime used for local maintenance may not expose `npm`, while the repository itself is locked by `package-lock.json`.
 
 ## Project Standards
 

@@ -169,10 +169,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [mode]);
 
   const signInAnonymously = useCallback(async () => {
+    if (mode !== "demo") {
+      const supabase = getSupabaseBrowserClient();
+      const { data, error } = await supabase.auth.signInAnonymously();
+
+      if (error) {
+        throw new Error(toAuthErrorMessage(error.message));
+      }
+
+      window.localStorage.removeItem(DEMO_SESSION_KEY);
+      setDemoUser(null);
+      setSession(data.session ?? null);
+      return;
+    }
+
     const email = "guest@rufo.local";
     window.localStorage.setItem(DEMO_SESSION_KEY, email);
     setDemoUser(createDemoUser(email));
-  }, []);
+  }, [mode]);
 
   const signOut = useCallback(async () => {
     if (mode === "demo" || !session) {
@@ -259,6 +273,10 @@ function toAuthErrorMessage(message: string) {
 
   if (normalized.includes("provider is not enabled") || normalized.includes("unsupported provider")) {
     return "Google 登录尚未在 Supabase 中启用。";
+  }
+
+  if (normalized.includes("anonymous") && normalized.includes("disabled")) {
+    return "访客登录尚未在 Supabase Auth 中启用，请在 Supabase 后台开启 Anonymous sign-ins。";
   }
 
   if (normalized.includes("password should be at least")) {

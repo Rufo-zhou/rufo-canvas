@@ -83,7 +83,7 @@ export function AuthPanel() {
               type="button"
               onClick={handleGoogleSignIn}
               disabled={submitting}
-              className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-slate-800 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-slate-800 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <span className="flex h-5 w-5 items-center justify-center rounded-full border border-slate-200 text-xs font-semibold text-blue-600" aria-hidden="true">
                 G
@@ -95,7 +95,7 @@ export function AuthPanel() {
             type="button"
             onClick={handleGuestSignIn}
             disabled={submitting}
-            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-slate-800 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium text-slate-800 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <UserRound className="h-4 w-4" aria-hidden="true" />
             以访客身份直接进入
@@ -136,7 +136,7 @@ export function AuthPanel() {
               type="email"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
-              className="h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-slate-900"
+              className="h-11 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-slate-900"
               placeholder={mode === "login" ? "输入你注册时填写的邮箱" : "例如 name@example.com"}
             />
           </label>
@@ -148,7 +148,7 @@ export function AuthPanel() {
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
-              className="h-10 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-slate-900"
+              className="h-11 w-full rounded-lg border border-slate-300 px-3 text-sm outline-none focus:border-slate-900"
               placeholder="至少 6 位"
             />
           </label>
@@ -159,7 +159,7 @@ export function AuthPanel() {
           <button
             type="submit"
             disabled={submitting}
-            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {submitting ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : mode === "login" ? <LogIn className="h-4 w-4" aria-hidden="true" /> : <UserPlus className="h-4 w-4" aria-hidden="true" />}
             {mode === "login" ? "登录" : "注册"}
