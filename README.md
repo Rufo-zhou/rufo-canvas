@@ -62,6 +62,7 @@ Open `http://localhost:3000`.
 - Guest access uses Supabase anonymous authentication and does not require an email.
 - Guest data belongs to that browser session and cannot be recovered after site data is cleared.
 - Google login is implemented in the UI and auth provider. Enable it only after configuring Google OAuth in Supabase, then set `NEXT_PUBLIC_GOOGLE_AUTH_ENABLED=true`.
+- If Supabase is paused or unreachable, Rufo falls back to a local browser session so users can still enter the canvas. Cloud sync and Supabase-backed generation resume after Supabase is active again and the user logs in.
 
 The Google OAuth callback URL is:
 

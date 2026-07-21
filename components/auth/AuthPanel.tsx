@@ -22,11 +22,14 @@ export function AuthPanel() {
 
     try {
       if (mode === "login") {
-        await signIn(email, password);
+        const result = await signIn(email, password);
+        if (result.fallbackToDemo) {
+          setMessage("Supabase 暂时不可达，已使用这个邮箱进入本地画布。云端恢复后请重新登录同步数据。");
+        }
       } else {
         const result = await signUp(email, password);
         setMessage(
-          appMode === "demo"
+          result.fallbackToDemo
             ? "本地账号已创建并登录。"
             : result.requiresEmailConfirmation
               ? `确认邮件已发送到 ${email}。请使用这个邮箱完成确认后登录，并检查垃圾邮件。`
@@ -59,7 +62,10 @@ export function AuthPanel() {
     setMessage(null);
 
     try {
-      await signInAnonymously();
+      const result = await signInAnonymously();
+      if (result.fallbackToDemo) {
+        setMessage("已进入本地游客画布。Supabase 恢复后，可重新登录使用云端项目。");
+      }
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : "访客登录失败，请重试。");
       setSubmitting(false);

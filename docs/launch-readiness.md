@@ -54,6 +54,7 @@ Provider keys must stay server-only. Never add `NEXT_PUBLIC_` to provider secret
 - Configure email templates and SMTP if email confirmation is enabled.
 - Configure Google OAuth only when `NEXT_PUBLIC_GOOGLE_AUTH_ENABLED=true`.
 - Add the deployed site URL and wildcard redirect URL in Supabase Auth URL Configuration.
+- If registration, login, or guest access shows `fetch failed`, check the Supabase project status first. An `INACTIVE` project must be resumed in Supabase Dashboard or through the Management API before cloud auth can work.
 
 ## Public Deployment Checklist
 
@@ -81,4 +82,4 @@ Provider keys must stay server-only. Never add `NEXT_PUBLIC_` to provider secret
 - The app supports local demo mode and Supabase production mode.
 - Public image generation has keyless Pollinations image models.
 - Stable video generation still depends on user or server provider keys.
-- Guest access now uses Supabase Anonymous Auth in production mode and local demo identity only in demo mode.
+- Guest access uses Supabase Anonymous Auth in production mode. If Supabase is paused or unreachable, Rufo falls back to a local browser session so users can still reach the canvas.

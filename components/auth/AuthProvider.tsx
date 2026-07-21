@@ -19,12 +19,20 @@ type AuthContextValue = {
   user: User | null;
   loading: boolean;
   configured: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string) => Promise<{ requiresEmailConfirmation: boolean }>;
-  signInAnonymously: () => Promise<void>;
+  signIn: (email: string, password: string) => Promise<AuthActionResult>;
+  signUp: (email: string, password: string) => Promise<AuthSignUpResult>;
+  signInAnonymously: () => Promise<AuthActionResult>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   getAccessToken: () => Promise<string>;
+};
+
+type AuthActionResult = {
+  fallbackToDemo: boolean;
+};
+
+type AuthSignUpResult = AuthActionResult & {
+  requiresEmailConfirmation: boolean;
 };
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -60,14 +68,24 @@ export function AuthProvider({ children }: AuthProviderProps) {
     let mounted = true;
     const supabase = getSupabaseBrowserClient();
 
-    supabase.auth.getSession().then(({ data }) => {
-      if (!mounted) {
-        return;
-      }
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (!mounted) {
+          return;
+        }
 
-      setSession(data.session);
-      setLoading(false);
-    });
+        setSession(data.session);
+        setLoading(false);
+      })
+      .catch(() => {
+        if (!mounted) {
+          return;
+        }
+
+        setSession(null);
+        setLoading(false);
+      });
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
@@ -89,18 +107,28 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         window.localStorage.setItem(DEMO_SESSION_KEY, email);
         setDemoUser(createDemoUser(email));
-        return;
+        return { fallbackToDemo: true };
       }
 
       const supabase = getSupabaseBrowserClient();
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await supabase.auth
+        .signInWithPassword({ email, password })
+        .catch((caughtError: unknown) => ({
+          error: toAuthLikeError(caughtError)
+        }));
 
       if (error) {
+        if (isSupabaseUnavailableError(error)) {
+          startDemoSession(email, setDemoUser);
+          return { fallbackToDemo: true };
+        }
+
         throw new Error(toAuthErrorMessage(error.message));
       }
 
       window.localStorage.removeItem(DEMO_SESSION_KEY);
       setDemoUser(null);
+      return { fallbackToDemo: false };
     },
     [mode]
   );
@@ -114,19 +142,29 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
         window.localStorage.setItem(DEMO_SESSION_KEY, email);
         setDemoUser(createDemoUser(email));
-        return { requiresEmailConfirmation: false };
+        return { fallbackToDemo: true, requiresEmailConfirmation: false };
       }
 
       const supabase = getSupabaseBrowserClient();
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`
-        }
-      });
+      const { data, error } = await supabase.auth
+        .signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/`
+          }
+        })
+        .catch((caughtError: unknown) => ({
+          data: { session: null },
+          error: toAuthLikeError(caughtError)
+        }));
 
       if (error) {
+        if (isSupabaseUnavailableError(error)) {
+          startDemoSession(email, setDemoUser);
+          return { fallbackToDemo: true, requiresEmailConfirmation: false };
+        }
+
         throw new Error(toAuthErrorMessage(error.message));
       }
 
@@ -135,7 +173,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setDemoUser(null);
       }
 
-      return { requiresEmailConfirmation: !data.session };
+      return {
+        fallbackToDemo: false,
+        requiresEmailConfirmation: !data.session
+      };
     },
     [mode]
   );
@@ -171,21 +212,33 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const signInAnonymously = useCallback(async () => {
     if (mode !== "demo") {
       const supabase = getSupabaseBrowserClient();
-      const { data, error } = await supabase.auth.signInAnonymously();
+      const { data, error } = await supabase.auth
+        .signInAnonymously()
+        .catch((caughtError: unknown) => ({
+          data: { session: null },
+          error: toAuthLikeError(caughtError)
+        }));
 
       if (error) {
+        if (isAnonymousFallbackError(error)) {
+          startDemoSession("guest@rufo.local", setDemoUser);
+          setSession(null);
+          return { fallbackToDemo: true };
+        }
+
         throw new Error(toAuthErrorMessage(error.message));
       }
 
       window.localStorage.removeItem(DEMO_SESSION_KEY);
       setDemoUser(null);
       setSession(data.session ?? null);
-      return;
+      return { fallbackToDemo: false };
     }
 
     const email = "guest@rufo.local";
     window.localStorage.setItem(DEMO_SESSION_KEY, email);
     setDemoUser(createDemoUser(email));
+    return { fallbackToDemo: true };
   }, [mode]);
 
   const signOut = useCallback(async () => {
@@ -259,6 +312,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
 function toAuthErrorMessage(message: string) {
   const normalized = message.toLowerCase();
 
+  if (isSupabaseUnavailableMessage(normalized)) {
+    return "无法连接 Supabase。项目可能已暂停、网络不可达或域名解析失败，请稍后重试；你也可以先用本地游客模式进入画布。";
+  }
+
   if (normalized.includes("invalid login credentials")) {
     return "邮箱或密码不正确。请使用注册时填写的邮箱登录。";
   }
@@ -284,6 +341,53 @@ function toAuthErrorMessage(message: string) {
   }
 
   return message;
+}
+
+function startDemoSession(
+  email: string,
+  setDemoUser: (user: User | null) => void
+) {
+  window.localStorage.setItem(DEMO_SESSION_KEY, email);
+  setDemoUser(createDemoUser(email));
+}
+
+function isAnonymousFallbackError(error: { message?: string; name?: string; status?: number }) {
+  const normalized = error.message?.toLowerCase() ?? "";
+  return isSupabaseUnavailableError(error) || (
+    normalized.includes("anonymous") &&
+    (normalized.includes("disabled") || normalized.includes("not enabled"))
+  );
+}
+
+function isSupabaseUnavailableError(error: { message?: string; name?: string; status?: number }) {
+  const normalized = error.message?.toLowerCase() ?? "";
+  return (
+    error.status === 0 ||
+    error.name === "AuthRetryableFetchError" ||
+    isSupabaseUnavailableMessage(normalized)
+  );
+}
+
+function isSupabaseUnavailableMessage(normalizedMessage: string) {
+  return (
+    normalizedMessage.includes("fetch failed") ||
+    normalizedMessage.includes("failed to fetch") ||
+    normalizedMessage.includes("networkerror") ||
+    normalizedMessage.includes("network request failed") ||
+    normalizedMessage.includes("enotfound") ||
+    normalizedMessage.includes("timeout")
+  );
+}
+
+function toAuthLikeError(error: unknown) {
+  return {
+    message: error instanceof Error ? error.message : "fetch failed",
+    name:
+      error instanceof Error
+        ? error.name
+        : "AuthRetryableFetchError",
+    status: 0
+  };
 }
 
 function createDemoUser(email: string): User {
